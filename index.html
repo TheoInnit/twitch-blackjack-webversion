@@ -586,8 +586,17 @@
     </div>
 
     <div class="hud-stats">
-      <div class="stat-pill">
-        <span>PTS:</span>
+      <div class="stat-pill" style="display: flex; align-items: center; gap: 6px;">
+        <!-- Circular Pixel Poker Chip Icon -->
+        <svg width="14" height="14" viewBox="0 0 11 11">
+          <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
+          <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
+          <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
+          <rect x="5" y="8" width="1" height="2" fill="#09090b"/>
+          <rect x="1" y="5" width="2" height="1" fill="#09090b"/>
+          <rect x="8" y="5" width="2" height="1" fill="#09090b"/>
+        </svg>
+        <span>CHIPS:</span>
         <span class="val" id="balance-display">1000</span>
       </div>
       <div class="stat-pill" id="user-badge">
@@ -667,7 +676,7 @@
       <!-- BETTING CONTROLS -->
       <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;">
-          <span style="font-size: 11px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> PTS</span>
+          <span style="font-size: 11px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
           <div class="custom-bet-group">
             <input type="number" id="custom-bet-input" class="bet-input" min="1" placeholder="BET..." onkeydown="if(event.key==='Enter') applyCustomBet()" />
             <button class="pixel-btn btn-gold" style="font-size: 9px; padding: 8px 10px;" onclick="applyCustomBet()">SET</button>
@@ -740,7 +749,7 @@
         "Fortune favors the bold."
       </p>
       <p id="fortune-reward" style="font-size: 11px; color: #4ade80; margin: 4px 0;">
-        +200 POINTS!
+        +200 CHIPS!
       </p>
       <button class="pixel-btn btn-gold" style="font-size: 10px; align-self: center;" onclick="closeFortuneModal()">
         AWESOME!
@@ -997,17 +1006,17 @@
       }
 
       if (state.points <= 0) {
-        setBanner("YOU HAVE 0 POINTS! CLAIM DAILY OR FORTUNE FIRST.", "lose");
+        setBanner("YOU HAVE 0 CHIPS! CLAIM DAILY OR FORTUNE FIRST.", "lose");
         sfx.bust();
         return;
       }
 
       if (rawVal > state.points) {
         state.currentBet = state.points;
-        setBanner(`CAPPED BET AT YOUR MAX BALANCE (${state.points} PTS)!`, "");
+        setBanner(`CAPPED BET AT YOUR MAX BALANCE (${state.points} CHIPS)!`, "");
       } else {
         state.currentBet = rawVal;
-        setBanner(`CUSTOM BET SET TO ${state.currentBet} PTS! PRESS DEAL.`, "");
+        setBanner(`CUSTOM BET SET TO ${state.currentBet} CHIPS! PRESS DEAL.`, "");
       }
 
       sfx.chip();
@@ -1042,7 +1051,7 @@
         return;
       }
       if (bet > state.points) {
-        setBanner("NOT ENOUGH POINTS FOR THAT BET!", "lose");
+        setBanner("NOT ENOUGH CHIPS FOR THAT BET!", "lose");
         sfx.bust();
         return;
       }
@@ -1070,7 +1079,7 @@
           revealed: true
         };
         sfx.win();
-        setBanner(`BLACKJACK! NATURAL 21! YOU WON +${payout} PTS!`, "blackjack");
+        setBanner(`BLACKJACK! NATURAL 21! YOU WON +${payout} CHIPS!`, "blackjack");
         saveState();
         renderUI();
         state.game = null;
@@ -1091,7 +1100,7 @@
       };
 
       const aceHint = dealerHand[0].v === "A" ? " DEALER SHOWS ACE — INSURANCE AVAILABLE!" : "";
-      setBanner(`BET: ${bet} PTS. YOUR MOVE: HIT OR STAND?${aceHint}`, "");
+      setBanner(`BET: ${bet} CHIPS. YOUR MOVE: HIT OR STAND?${aceHint}`, "");
       saveState();
       renderUI();
     }
@@ -1144,7 +1153,7 @@
 
       const bet = g.bets[0];
       if (bet > state.points) {
-        setBanner(`NEED ${bet} MORE PTS TO SPLIT!`, "lose");
+        setBanner(`NEED ${bet} MORE CHIPS TO SPLIT!`, "lose");
         sfx.bust();
         return;
       }
@@ -1174,7 +1183,7 @@
 
       const bet = g.bets[idx];
       if (bet > state.points) {
-        setBanner(`NEED ${bet} MORE PTS TO DOUBLE DOWN!`, "lose");
+        setBanner(`NEED ${bet} MORE CHIPS TO DOUBLE DOWN!`, "lose");
         sfx.bust();
         return;
       }
@@ -1209,7 +1218,7 @@
 
       const cost = Math.floor(g.bets[0] / 2);
       if (cost > state.points) {
-        setBanner(`NEED ${cost} PTS FOR INSURANCE!`, "lose");
+        setBanner(`NEED ${cost} CHIPS FOR INSURANCE!`, "lose");
         sfx.bust();
         return;
       }
@@ -1219,7 +1228,7 @@
       g.hasInsurance = true;
       g.insuranceCost = cost;
 
-      setBanner(`INSURANCE LOCKED (${cost} PTS)! CONTINUE YOUR HAND.`, "");
+      setBanner(`INSURANCE LOCKED (${cost} CHIPS)! CONTINUE YOUR HAND.`, "");
       saveState();
       renderUI();
     }
@@ -1317,7 +1326,7 @@
       state.lastDaily = now;
       if (state.currentBet === 0 && state.points >= 50) state.currentBet = 50;
       sfx.win();
-      setBanner(`CLAIMED +500 DAILY BONUS POINTS! NEW BALANCE: ${state.points} PTS.`, "win");
+      setBanner(`CLAIMED +500 DAILY BONUS CHIPS! NEW BALANCE: ${state.points} CHIPS.`, "win");
       saveState();
       renderUI();
     }
@@ -1344,7 +1353,7 @@
       renderUI();
 
       document.getElementById('fortune-text').textContent = `"${pick.text}"`;
-      document.getElementById('fortune-reward').textContent = `+${pick.points} POINTS!`;
+      document.getElementById('fortune-reward').textContent = `+${pick.points} CHIPS!`;
       document.getElementById('fortune-modal').classList.add('open');
     }
 
