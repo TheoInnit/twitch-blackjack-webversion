@@ -149,17 +149,19 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 10px;
+      gap: 20px; /* extra space for overlapping chip */
+      margin-left: 12px;
     }
 
     .stat-pill {
       background: #0f0d17;
       border: 3px solid var(--pixel-border);
-      padding: 8px 12px;
+      padding: 8px 12px 8px 18px; /* extra left padding for chip overlap */
       font-size: 11px;
       display: flex;
       align-items: center;
       gap: 8px;
+      position: relative;
       box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08);
     }
 
@@ -586,9 +588,9 @@
     </div>
 
     <div class="hud-stats">
-      <div class="stat-pill" style="display: flex; align-items: center; gap: 6px;">
-        <!-- Circular Pixel Poker Chip Icon -->
-        <svg width="14" height="14" viewBox="0 0 11 11">
+      <div class="stat-pill">
+        <!-- Enlarged Overlapping Circular Pixel Poker Chip Icon -->
+        <svg width="34" height="34" viewBox="0 0 11 11" style="position: absolute; left: -16px; top: 50%; transform: translateY(-50%); filter: drop-shadow(2px 2px 0px #09090b); z-index: 2;">
           <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
           <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
           <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
@@ -824,7 +826,7 @@
       "♣": `<svg class="card-suit-svg" viewBox="0 0 11 11" fill="currentColor"><path d="M4 1h3v1h1v2H7v1h2v1h1v2H9v1H7V8H6v1h2v1H3V9h2V8H4v1H2V8H1V6h1V5h2V4H3V2h1V1z"/></svg>`
     };
 
-    const STORAGE_KEY = 'pixel_blackjack_save_v3';
+    const STORAGE_KEY = 'pixel_blackjack_save_v4';
 
     let state = {
       username: 'GUEST',
