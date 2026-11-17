@@ -866,7 +866,7 @@
       }
     }
 
-    function saveState() {
+    async function saveState() {
       try {
         const toSave = {
           username: state.username,
@@ -876,6 +876,12 @@
           lastFortune: state.lastFortune
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+
+        // DIRECT SPREADSHEET SYNC: Push point updates straight to Google Apps Script/Sheet (ID: 1tzHwJOB-NgrcsZtWDU6uQ7N0VwxiyE1T2vZPgoD6d84)
+        if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=save&arg=${state.points}&format=json`;
+          fetch(syncUrl).catch(err => console.error("Sheet sync error:", err));
+        }
       } catch (e) { console.error(e); }
     }
 
