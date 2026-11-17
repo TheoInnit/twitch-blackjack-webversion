@@ -721,10 +721,11 @@
   </div>
 
   <!-- ========================================================================
-       GAME LOGIC & TWITCH OAUTH ENGINE
+       GAME LOGIC, OAUTH & GOOGLE APPS SCRIPT SYNC ENGINE
        ======================================================================== -->
   <script>
     const TWITCH_CLIENT_ID = '1vydppdg2bnlaka3zmzbm441oqgwb6';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
 
     let soundEnabled = true;
     let audioCtx = null;
@@ -786,7 +787,7 @@
       "♣": `<svg class="card-suit-svg" viewBox="0 0 11 11" fill="currentColor"><path d="M4 1h3v1h1v2H7v1h2v1h1v2H9v1H7V8H6v1h2v1H3V9h2V8H4v1H2V8H1V6h1V5h2V4H3V2h1V1z"/></svg>`
     };
 
-    const STORAGE_KEY = 'pixel_blackjack_save_v2';
+    const STORAGE_KEY = 'pixel_blackjack_save_v3';
 
     let state = {
       username: 'GUEST',
@@ -844,7 +845,7 @@
 
     function loginWithTwitch() {
       sfx.click();
-      const redirectUri = window.location.origin + window.location.pathname;
+      const redirectUri = "https://theoinnit.github.io/twitch-blackjack-webversion/";
       const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
       window.location.href = authUrl;
     }
@@ -860,6 +861,10 @@
         const data = await res.json();
         if (data.data && data.data[0]) {
           state.username = data.data[0].display_name.toUpperCase();
+          
+          // Fetch live points from Google Apps Script Sheet
+          await syncPointsFromSheet(state.username);
+
           saveState();
           renderUI();
           setBanner(`TWITCH VERIFIED: WELCOME @${state.username}!`, "win");
@@ -867,6 +872,20 @@
       } catch (err) {
         console.error('Twitch Helix fetch error:', err);
         setBanner("FAILED TO VERIFY TWITCH TOKEN. TRY LOGGING IN AGAIN.", "lose");
+      }
+    }
+
+    async function syncPointsFromSheet(username) {
+      if (!GOOGLE_SCRIPT_URL) return;
+      try {
+        const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(username)}&action=points&format=json`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && typeof data.points === 'number') {
+          state.points = data.points;
+        }
+      } catch (e) {
+        console.error("Could not sync points from Google Sheet:", e);
       }
     }
 
