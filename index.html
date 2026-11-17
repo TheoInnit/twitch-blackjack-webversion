@@ -202,7 +202,6 @@
 
     .felt-surface {
       background-color: var(--felt-mid);
-      /* Subtle pixel checker weave */
       background-image:
         linear-gradient(45deg, var(--felt-dark) 25%, transparent 25%),
         linear-gradient(-45deg, var(--felt-dark) 25%, transparent 25%),
@@ -221,7 +220,6 @@
       gap: 16px;
     }
 
-    /* Table Felt Stamped Rules Text */
     .felt-watermark {
       text-align: center;
       font-size: 9px;
@@ -270,7 +268,6 @@
       min-height: 126px;
     }
 
-    /* Split Hands Container */
     .player-hands-grid {
       display: flex;
       flex-wrap: wrap;
@@ -303,7 +300,7 @@
     }
 
     /* ==========================================================================
-       6. MINIMALIST PIXEL-ART PLAYING CARDS (ONLY VALUE & SUIT!)
+       6. MINIMALIST PIXEL-ART PLAYING CARDS
        ========================================================================== */
     @keyframes pixelDeal {
       0% { transform: translateY(-18px) scale(0.85); opacity: 0; }
@@ -337,7 +334,6 @@
       color: var(--ink-black);
     }
 
-    /* Card Value Display */
     .card-value {
       font-size: 24px;
       line-height: 1;
@@ -345,7 +341,6 @@
       text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
     }
 
-    /* Crisp Pixel Suit SVG Container */
     .card-suit-svg {
       width: 34px;
       height: 34px;
@@ -353,7 +348,6 @@
       shape-rendering: crispEdges;
     }
 
-    /* Face-Down Pixel Card Back */
     .pixel-card.card-back {
       background-color: #1d4ed8;
       background-image:
@@ -421,7 +415,6 @@
       gap: 10px;
     }
 
-    /* Pixel Poker Chips */
     .pixel-chip {
       font-family: 'Press Start 2P', monospace;
       font-size: 10px;
@@ -471,7 +464,7 @@
     }
 
     /* ==========================================================================
-       9. PIXEL MODAL (TWITCH LOGIN & FORTUNE POPUP)
+       9. PIXEL MODAL (FORTUNE POPUP)
        ========================================================================== */
     .modal-backdrop {
       position: fixed;
@@ -508,30 +501,6 @@
       padding-bottom: 10px;
     }
 
-    .pixel-input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 9px;
-      color: #cbd5e1;
-    }
-
-    .pixel-input {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 10px;
-      padding: 10px;
-      background: #09090b;
-      color: #4ade80;
-      border: 4px solid #475569;
-      outline: none;
-      width: 100%;
-    }
-
-    .pixel-input:focus {
-      border-color: var(--twitch-purple);
-    }
-
-    /* Custom Bet Box Styling */
     .custom-bet-group {
       display: flex;
       align-items: center;
@@ -554,23 +523,12 @@
       border-color: var(--gold);
     }
 
-    /* Hide default number input arrows */
     .bet-input::-webkit-outer-spin-button,
     .bet-input::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
 
-    .modal-note {
-      font-size: 8px;
-      line-height: 1.6;
-      color: #94a3b8;
-      background: #0f0d17;
-      padding: 10px;
-      border: 2px solid #334155;
-    }
-
-    /* Responsive Adjustments */
     @media (max-width: 640px) {
       .pixel-card {
         width: 68px;
@@ -627,7 +585,8 @@
       <button class="pixel-btn btn-cyan" id="btn-fortune" onclick="claimFortune()">
         FORTUNE (6H)
       </button>
-      <button class="pixel-btn btn-twitch" id="btn-twitch-login" onclick="openTwitchModal()">
+      <!-- Clicking this button now instantly triggers Twitch Login OAuth Redirect -->
+      <button class="pixel-btn btn-twitch" id="btn-twitch-login" onclick="loginWithTwitch()">
         <!-- Pixel Twitch Glitch Icon -->
         <svg width="14" height="14" viewBox="0 0 12 12" fill="#ffffff">
           <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
@@ -668,7 +627,7 @@
           </div>
         </div>
 
-        <!-- PLAYER ZONE (SUPPORTS SINGLE & SPLIT HANDS) -->
+        <!-- PLAYER ZONE -->
         <section class="zone-container">
           <div class="player-hands-grid" id="player-hands-container">
             <!-- Player hand slots render here -->
@@ -685,7 +644,7 @@
   <section class="controls-dock">
     <div class="dock-panel pixel-box">
 
-      <!-- BETTING CONTROLS (SHOWN WHEN NO ROUND IS ACTIVE) -->
+      <!-- BETTING CONTROLS -->
       <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;">
           <span style="font-size: 11px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> PTS</span>
@@ -710,7 +669,7 @@
         </button>
       </div>
 
-      <!-- IN-GAME ACTION BUTTONS (HIT, STAND, SPLIT, DD, INSURANCE) -->
+      <!-- IN-GAME ACTION BUTTONS -->
       <div id="gameplay-controls" class="action-buttons-row" style="display: none;">
         <button class="pixel-btn btn-green" id="btn-hit" onclick="playerHit()">
           HIT
@@ -733,46 +692,6 @@
   </section>
 
   <!-- ========================================================================
-       TWITCH LOGIN & APPS SCRIPT SYNC MODAL
-       ======================================================================== -->
-  <div class="modal-backdrop" id="twitch-modal">
-    <div class="modal-card pixel-box">
-      <div class="modal-title">
-        <span>TWITCH ACCOUNT &amp; SYNC</span>
-        <button class="pixel-btn btn-red" style="padding: 6px 10px; font-size: 9px;" onclick="closeTwitchModal()">X</button>
-      </div>
-
-      <div class="pixel-input-group">
-        <label for="input-twitch-user">TWITCH USERNAME (MANUAL OVERRIDE)</label>
-        <input type="text" id="input-twitch-user" class="pixel-input" placeholder="e.g. playerone" />
-      </div>
-
-      <div class="pixel-input-group">
-        <label for="input-twitch-client">TWITCH CLIENT ID</label>
-        <input type="text" id="input-twitch-client" class="pixel-input" value="1vydppdg2bnlaka3zmzbm441oqgwb6" />
-      </div>
-
-      <div class="pixel-input-group">
-        <label for="input-script-url">GOOGLE APPS SCRIPT WEB APP URL (OPTIONAL)</label>
-        <input type="text" id="input-script-url" class="pixel-input" placeholder="https://script.google.com/macros/s/.../exec" />
-      </div>
-
-      <div class="modal-note">
-        TIP: Click "OAuth Redirect" below to securely authenticate with your Twitch account and lock in your official username!
-      </div>
-
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
-        <button class="pixel-btn btn-twitch" style="font-size: 9px;" onclick="launchTwitchOAuth()">
-          OAUTH REDIRECT
-        </button>
-        <button class="pixel-btn btn-green" style="font-size: 9px;" onclick="saveTwitchSettings()">
-          SAVE &amp; LOGIN
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================
        FORTUNE COOKIE POPUP MODAL
        ======================================================================== -->
   <div class="modal-backdrop" id="fortune-modal">
@@ -781,7 +700,6 @@
         <span>PIXEL FORTUNE COOKIE</span>
         <button class="pixel-btn btn-red" style="padding: 6px 10px; font-size: 9px;" onclick="closeFortuneModal()">X</button>
       </div>
-      <!-- Pixel Cookie Art SVG -->
       <div style="margin: 6px auto;">
         <svg width="64" height="48" viewBox="0 0 16 12">
           <rect x="4" y="1" width="8" height="2" fill="#f59e0b"/>
@@ -804,12 +722,11 @@
   </div>
 
   <!-- ========================================================================
-       GAME LOGIC, PIXEL CARD RENDERER & 8-BIT AUDIO ENGINE
+       GAME LOGIC & TWITCH OAUTH ENGINE
        ======================================================================== -->
   <script>
-    /* ------------------------------------------------------------------------
-       1. RETRO 8-BIT SYNTHESIZER (WEB AUDIO API)
-       ------------------------------------------------------------------------ */
+    const TWITCH_CLIENT_ID = '1vydppdg2bnlaka3zmzbm441oqgwb6';
+
     let soundEnabled = true;
     let audioCtx = null;
 
@@ -838,7 +755,7 @@
         gain.connect(audioCtx.destination);
         osc.start(audioCtx.currentTime + delay);
         osc.stop(audioCtx.currentTime + delay + duration);
-      } catch (e) { /* Ignore audio block before user gesture */ }
+      } catch (e) {}
     }
 
     const sfx = {
@@ -863,9 +780,6 @@
       if (soundEnabled) sfx.click();
     }
 
-    /* ------------------------------------------------------------------------
-       2. CRISP PIXEL-ART SUIT SVGs
-       ------------------------------------------------------------------------ */
     const SUIT_SVGS = {
       "♠": `<svg class="card-suit-svg" viewBox="0 0 11 11" fill="currentColor"><path d="M5 1h1v1h1v1h1v1h1v1h1v2H9v1H7V7H6v2h2v1H3V9h2V7H4v1H2V7H1V5h1V4h1V3h1V2h1V1z"/></svg>`,
       "♥": `<svg class="card-suit-svg" viewBox="0 0 11 11" fill="currentColor"><path d="M2 2h2v1h1v1h1V3h1V2h2v1h1v3H9v1H8v1H7v1H6v1H5V9H4V8H3V7H2V6H1V3h1V2z"/></svg>`,
@@ -873,15 +787,10 @@
       "♣": `<svg class="card-suit-svg" viewBox="0 0 11 11" fill="currentColor"><path d="M4 1h3v1h1v2H7v1h2v1h1v2H9v1H7V8H6v1h2v1H3V9h2V8H4v1H2V8H1V6h1V5h2V4H3V2h1V1z"/></svg>`
     };
 
-    /* ------------------------------------------------------------------------
-       3. STATE & PERSISTENCE
-       ------------------------------------------------------------------------ */
-    const STORAGE_KEY = 'pixel_blackjack_save_v1';
+    const STORAGE_KEY = 'pixel_blackjack_save_v2';
 
     let state = {
       username: 'GUEST',
-      twitchClientId: '1vydppdg2bnlaka3zmzbm441oqgwb6',
-      scriptUrl: '',
       twitchToken: '',
       points: 1000,
       currentBet: 50,
@@ -910,7 +819,7 @@
         }
       } catch (e) { console.error(e); }
 
-      // Check URL hash for Twitch OAuth Implicit Flow token (#access_token=...)
+      // Check URL hash for Twitch OAuth token returned from Twitch
       if (window.location.hash && window.location.hash.includes('access_token=')) {
         const params = new URLSearchParams(window.location.hash.substring(1));
         const token = params.get('access_token');
@@ -926,8 +835,6 @@
       try {
         const toSave = {
           username: state.username,
-          twitchClientId: state.twitchClientId,
-          scriptUrl: state.scriptUrl,
           points: state.points,
           currentBet: state.currentBet,
           lastDaily: state.lastDaily,
@@ -937,9 +844,35 @@
       } catch (e) { console.error(e); }
     }
 
-    /* ------------------------------------------------------------------------
-       4. DECK & BLACKJACK MATH ENGINE
-       ------------------------------------------------------------------------ */
+    // Direct Twitch OAuth login redirect
+    function loginWithTwitch() {
+      sfx.click();
+      const redirectUri = window.location.origin + window.location.pathname;
+      const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
+      window.location.href = authUrl;
+    }
+
+    async function fetchTwitchUserFromToken(token) {
+      try {
+        const res = await fetch('https://api.twitch.tv/helix/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Client-Id': TWITCH_CLIENT_ID
+          }
+        });
+        const data = await res.json();
+        if (data.data && data.data[0]) {
+          state.username = data.data[0].display_name.toUpperCase();
+          saveState();
+          renderUI();
+          setBanner(`TWITCH VERIFIED: WELCOME @${state.username}!`, "win");
+        }
+      } catch (err) {
+        console.error('Twitch Helix fetch error:', err);
+        setBanner("FAILED TO VERIFY TWITCH TOKEN. TRY LOGGING IN AGAIN.", "lose");
+      }
+    }
+
     function createDeck() {
       const suits = ["♠", "♥", "♦", "♣"];
       const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
@@ -976,9 +909,6 @@
       return score;
     }
 
-    /* ------------------------------------------------------------------------
-       5. BETTING CONTROLS
-       ------------------------------------------------------------------------ */
     function addBet(amount) {
       if (state.game) return;
       sfx.chip();
@@ -1035,9 +965,6 @@
       renderUI();
     }
 
-    /* ------------------------------------------------------------------------
-       6. CORE GAMEPLAY ACTIONS
-       ------------------------------------------------------------------------ */
     function startGame() {
       if (state.game) return;
       const bet = state.currentBet;
@@ -1306,10 +1233,194 @@
       updateControlsVisibility(false);
     }
 
-    /* ------------------------------------------------------------------------
-       7. DAILY & FORTUNE COOKIE
-       ------------------------------------------------------------------------ */
     function claimDaily() {
       const cooldownMs = 24 * 60 * 60 * 1000;
       const now = Date.now();
-      if
+      if (now - state.lastDaily < cooldownMs) {
+        const rem = cooldownMs - (now - state.lastDaily);
+        const hrs = Math.floor(rem / 3600000);
+        const mins = Math.floor((rem % 3600000) / 60000);
+        setBanner(`DAILY BONUS ALREADY CLAIMED! TRY AGAIN IN ${hrs}H ${mins}M.`, "lose");
+        sfx.bust();
+        return;
+      }
+
+      state.points += 500;
+      state.lastDaily = now;
+      if (state.currentBet === 0 && state.points >= 50) state.currentBet = 50;
+      sfx.win();
+      setBanner(`CLAIMED +500 DAILY BONUS POINTS! NEW BALANCE: ${state.points} PTS.`, "win");
+      saveState();
+      renderUI();
+    }
+
+    function claimFortune() {
+      const cooldownMs = 6 * 60 * 60 * 1000;
+      const now = Date.now();
+      if (now - state.lastFortune < cooldownMs) {
+        const rem = cooldownMs - (now - state.lastFortune);
+        const hrs = Math.floor(rem / 3600000);
+        const mins = Math.floor((rem % 3600000) / 60000);
+        setBanner(`FORTUNE COOKIE STILL BAKING! COME BACK IN ${hrs}H ${mins}M.`, "lose");
+        sfx.bust();
+        return;
+      }
+
+      const pick = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+      state.points += pick.points;
+      state.lastFortune = now;
+      if (state.currentBet === 0 && state.points >= 50) state.currentBet = 50;
+
+      sfx.win();
+      saveState();
+      renderUI();
+
+      document.getElementById('fortune-text').textContent = `"${pick.text}"`;
+      document.getElementById('fortune-reward').textContent = `+${pick.points} POINTS!`;
+      document.getElementById('fortune-modal').classList.add('open');
+    }
+
+    function closeFortuneModal() {
+      sfx.click();
+      document.getElementById('fortune-modal').classList.remove('open');
+    }
+
+    function createCardElement(card, isFaceDown = false) {
+      const el = document.createElement('div');
+      if (isFaceDown) {
+        el.className = 'pixel-card card-back';
+        return el;
+      }
+
+      const isRed = (card.s === "♥" || card.s === "♦");
+      el.className = `pixel-card ${isRed ? 'red' : 'black'}`;
+      el.innerHTML = `
+        <div class="card-value">${card.v}</div>
+        ${SUIT_SVGS[card.s]}
+      `;
+      return el;
+    }
+
+    function setBanner(text, typeClass = "") {
+      const banner = document.getElementById('status-banner');
+      banner.textContent = text;
+      banner.className = 'status-banner' + (typeClass ? ' ' + typeClass : '');
+    }
+
+    function updateControlsVisibility(isPlaying) {
+      document.getElementById('betting-controls').style.display = isPlaying ? 'none' : 'flex';
+      document.getElementById('gameplay-controls').style.display = isPlaying ? 'flex' : 'none';
+    }
+
+    function renderUI() {
+      document.getElementById('balance-display').textContent = state.points;
+      document.getElementById('username-display').textContent = state.username;
+      document.getElementById('current-bet-display').textContent = state.currentBet;
+      const customInput = document.getElementById('custom-bet-input');
+      if (customInput && document.activeElement !== customInput) {
+        customInput.value = state.currentBet > 0 ? state.currentBet : '';
+      }
+      document.getElementById('twitch-btn-text').textContent =
+        state.username === 'GUEST' ? 'LOGIN TWITCH' : `@${state.username}`;
+
+      const dealerCardsEl = document.getElementById('dealer-cards');
+      const dealerScoreEl = document.getElementById('dealer-score');
+      const playerContainerEl = document.getElementById('player-hands-container');
+
+      dealerCardsEl.innerHTML = '';
+      playerContainerEl.innerHTML = '';
+
+      if (!state.game) {
+        dealerScoreEl.textContent = '?';
+        dealerCardsEl.appendChild(createCardElement(null, true));
+        dealerCardsEl.appendChild(createCardElement(null, true));
+
+        const slot = document.createElement('div');
+        slot.className = 'hand-slot';
+        slot.innerHTML = `
+          <div class="zone-header">
+            <span>PLAYER</span>
+            <span class="score-badge">0</span>
+          </div>
+          <div class="cards-row">
+            <div class="pixel-card black" style="opacity:0.45;">
+              <div class="card-value">A</div>
+              ${SUIT_SVGS["♠"]}
+            </div>
+            <div class="pixel-card red" style="opacity:0.45;">
+              <div class="card-value">K</div>
+              ${SUIT_SVGS["♥"]}
+            </div>
+          </div>
+        `;
+        playerContainerEl.appendChild(slot);
+        updateControlsVisibility(false);
+        return;
+      }
+
+      const g = state.game;
+      updateControlsVisibility(!g.revealed);
+
+      g.dealer.forEach((card, idx) => {
+        const hideHoleCard = (!g.revealed && idx === 1);
+        dealerCardsEl.appendChild(createCardElement(card, hideHoleCard));
+      });
+
+      if (g.revealed) {
+        dealerScoreEl.textContent = calcScore(g.dealer);
+      } else {
+        dealerScoreEl.textContent = calcScore([g.dealer[0]]) + " + ?";
+      }
+
+      g.hands.forEach((hand, idx) => {
+        const slot = document.createElement('div');
+        const isCurrentActive = (!g.revealed && g.isSplit && g.activeHandIndex === idx);
+        slot.className = 'hand-slot' + (isCurrentActive ? ' active-hand' : '');
+
+        const label = g.isSplit ? `HAND ${idx + 1}` : 'PLAYER';
+        const score = calcScore(hand);
+
+        const header = document.createElement('div');
+        header.className = 'zone-header';
+        header.innerHTML = `
+          <span>${label}</span>
+          <span class="score-badge">${score}</span>
+          <span class="bet-tag">BET: ${g.bets[idx]}</span>
+        `;
+
+        const cardsRow = document.createElement('div');
+        cardsRow.className, 'cards-row';
+        hand.forEach(c => cardsRow.appendChild(createCardElement(c, false)));
+
+        slot.appendChild(header);
+        slot.appendChild(cardsRow);
+        playerContainerEl.appendChild(slot);
+      });
+
+      if (!g.revealed) {
+        const activeHand = g.hands[g.activeHandIndex];
+        const activeBet = g.bets[g.activeHandIndex];
+
+        const canSplit = !g.isSplit &&
+          activeHand.length === 2 &&
+          activeHand[0].v === activeHand[1].v &&
+          state.points >= activeBet;
+
+        const canDD = activeHand.length === 2 && state.points >= activeBet;
+
+        const insCost = Math.floor(g.bets[0] / 2);
+        const canIns = g.dealer[0].v === "A" && !g.hasInsurance && state.points >= insCost;
+
+        document.getElementById('btn-split').disabled = !canSplit;
+        document.getElementById('btn-dd').disabled = !canDD;
+        document.getElementById('btn-insurance').disabled = !canIns;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      renderUI();
+    });
+  </script>
+</body>
+</html>
