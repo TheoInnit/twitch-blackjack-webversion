@@ -838,7 +838,7 @@
       { text: "May your day be filled with 21s and warm coffee.", points: 300 }
     ];
 
-    function loadState() {
+    async function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -854,7 +854,15 @@
           state.twitchToken = token;
           history.replaceState(null, '', window.location.pathname + window.location.search);
           fetchTwitchUserFromToken(token);
+          return;
         }
+      }
+
+      // AUTO-SYNC: Silently fetch fresh points from the sheet on page load if user is logged in
+      if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+        await syncPointsFromSheet(state.username);
+        saveState();
+        renderUI();
       }
     }
 
