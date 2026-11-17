@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PIXEL BLACKJACK — Twitch Edition</title>
+  <title>TWITCH BLACKJACK</title>
   <!-- Retro 8-bit Pixel Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -392,7 +392,7 @@
     .controls-dock {
       width: 100%;
       max-width: 1000px;
-      padding: 0 14px 20px;
+      padding: 0 14px 10px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -464,8 +464,24 @@
     }
 
     /* ==========================================================================
-       9. PIXEL MODAL (FORTUNE POPUP)
+       9. FOOTER & MODALS
        ========================================================================== */
+    .page-footer {
+      padding: 10px 0 20px;
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.45);
+      text-align: center;
+    }
+
+    .page-footer a {
+      color: var(--twitch-light);
+      text-decoration: none;
+    }
+
+    .page-footer a:hover {
+      text-decoration: underline;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -564,7 +580,7 @@
       <svg width="22" height="22" viewBox="0 0 11 11" fill="#facc15">
         <path d="M5 1h1v1h1v1h1v1h1v1h1v2H9v1H7V7H6v2h2v1H3V9h2V7H4v1H2V7H1V5h1V4h1V3h1V2h1V1z"/>
       </svg>
-      <span>PIXEL BLACKJACK</span>
+      <span>TWITCH BLACKJACK</span>
     </div>
 
     <div class="hud-stats">
@@ -591,6 +607,9 @@
           <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
         </svg>
         <span id="twitch-btn-text">LOGIN TWITCH</span>
+      </button>
+      <button class="pixel-btn btn-red" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+        LOGOUT
       </button>
       <button class="pixel-btn btn-slate" id="btn-sound" onclick="toggleSound()" title="Toggle 8-Bit Sound">
         SFX:ON
@@ -619,7 +638,7 @@
         <!-- FELT STAMP & CENTER MESSAGE BANNER -->
         <div>
           <div class="felt-watermark">
-            BLACKJACK PAYS 3 TO 2 &bull; DEALER STANDS ON ALL 17s &bull; INSURANCE PAYS 2 TO 1
+            TWITCH BLACKJACK &bull; DEALER STANDS ON ALL 17s &bull; INSURANCE PAYS 2 TO 1
           </div>
           <div class="status-banner" id="status-banner" style="margin-top: 10px;">
             PLACE YOUR BET BELOW AND PRESS DEAL TO START!
@@ -689,6 +708,13 @@
 
     </div>
   </section>
+
+  <!-- ========================================================================
+       FOOTER CREDIT
+       ======================================================================== -->
+  <footer class="page-footer">
+    created by <a href="http://twitch.tv/theoinnit_" target="_blank">TheoInnit_</a>
+  </footer>
 
   <!-- ========================================================================
        FORTUNE COOKIE POPUP MODAL
@@ -848,6 +874,16 @@
       const redirectUri = "https://theoinnit.github.io/twitch-blackjack-webversion/";
       const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
       window.location.href = authUrl;
+    }
+
+    function logoutTwitch() {
+      sfx.click();
+      state.username = 'GUEST';
+      state.twitchToken = '';
+      state.points = 1000;
+      saveState();
+      renderUI();
+      setBanner("LOGGED OUT. PLAYING AS GUEST.", "");
     }
 
     async function fetchTwitchUserFromToken(token) {
@@ -1336,8 +1372,10 @@
       if (customInput && document.activeElement !== customInput) {
         customInput.value = state.currentBet > 0 ? state.currentBet : '';
       }
-      document.getElementById('twitch-btn-text').textContent =
-        state.username === 'GUEST' ? 'LOGIN TWITCH' : `@${state.username}`;
+      
+      const isGuest = (state.username === 'GUEST');
+      document.getElementById('twitch-btn-text').textContent = isGuest ? 'LOGIN TWITCH' : `@${state.username}`;
+      document.getElementById('btn-twitch-logout').style.display = isGuest ? 'none' : 'inline-flex';
 
       const dealerCardsEl = document.getElementById('dealer-cards');
       const dealerScoreEl = document.getElementById('dealer-score');
