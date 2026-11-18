@@ -834,6 +834,8 @@
       currentBet: 50,
       lastDaily: 0,
       lastFortune: 0,
+      stats: { totalHands: 0, wins: 0, losses: 0, netProfit: 0 },
+      history: [],
       game: null
     };
 
@@ -854,6 +856,8 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           state = { ...state, ...parsed, game: null };
+          if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
+          if (!state.history) state.history = [];
         }
       } catch (e) { console.error(e); }
 
@@ -868,29 +872,31 @@
         }
       }
 
-      // AUTO-SYNC: Silently fetch fresh points from the sheet on page load if user is logged in
+      // AUTO-SYNC: Silently fetch fresh points and wallet data from the sheet on page load if logged in
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
-        await syncPointsFromSheet(state.username);
-        saveState();
+        await syncWalletDataFromSheet(state.username);
+        saveStateAndDatabase();
         renderUI();
       }
     }
 
-    async function saveState() {
+    async function saveStateAndDatabase() {
       try {
         const toSave = {
           username: state.username,
           points: state.points,
           currentBet: state.currentBet,
           lastDaily: state.lastDaily,
-          lastFortune: state.lastFortune
+          lastFortune: state.lastFortune,
+          stats: state.stats,
+          history: state.history
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 
-        // DIRECT SPREADSHEET SYNC: Push point updates straight to Google Apps Script/Sheet
+        // PUSH FULL STATS & HISTORY DIRECTLY TO GOOGLE SHEET DATABASE
         if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
-          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=save&arg=${state.points}&format=json`;
-          fetch(syncUrl).catch(err => console.error("Sheet sync error:", err));
+          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&points=${state.points}&totalHands=${state.stats.totalHands}&wins=${state.stats.wins}&netProfit=${state.stats.netProfit}&history=${encodeURIComponent(JSON.stringify(state.history))}&format=json`;
+          fetch(syncUrl).catch(err => console.error("Database sync error:", err));
         }
       } catch (e) { console.error(e); }
     }
@@ -907,7 +913,9 @@
       state.username = 'GUEST';
       state.twitchToken = '';
       state.points = 1000;
-      saveState();
+      state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
+      state.history = [];
+      saveStateAndDatabase();
       renderUI();
       setBanner("LOGGED OUT. PLAYING AS GUEST.", "");
     }
@@ -924,10 +932,10 @@
         if (data.data && data.data[0]) {
           state.username = data.data[0].display_name.toUpperCase();
           
-          // Fetch live points from Google Apps Script Sheet
-          await syncPointsFromSheet(state.username);
+          // Fetch live wallet stats & history from Google Sheet
+          await syncWalletDataFromSheet(state.username);
 
-          saveState();
+          saveStateAndDatabase();
           renderUI();
           setBanner(`TWITCH VERIFIED: WELCOME @${state.username}!`, "win");
         }
@@ -937,17 +945,19 @@
       }
     }
 
-    async function syncPointsFromSheet(username) {
+    async function syncWalletDataFromSheet(username) {
       if (!GOOGLE_SCRIPT_URL) return;
       try {
-        const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(username)}&action=points&format=json`;
+        const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(username)}&action=walletdata&format=json`;
         const res = await fetch(url);
         const data = await res.json();
-        if (data && typeof data.points === 'number') {
+        if (data && data.success) {
           state.points = data.points;
+          state.stats = data.stats;
+          state.history = data.history || [];
         }
       } catch (e) {
-        console.error("Could not sync points from Google Sheet:", e);
+        console.error("Could not sync wallet data from Google Sheet:", e);
       }
     }
 
@@ -991,7 +1001,7 @@
       if (state.game) return;
       sfx.chip();
       state.currentBet = Math.min(state.points, state.currentBet + amount);
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1021,7 +1031,7 @@
       }
 
       sfx.chip();
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1031,7 +1041,7 @@
       state.currentBet = 0;
       const inputEl = document.getElementById('custom-bet-input');
       if (inputEl) inputEl.value = '';
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1039,7 +1049,7 @@
       if (state.game) return;
       sfx.chip();
       state.currentBet = state.points;
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1068,6 +1078,18 @@
       if (pScore === 21) {
         const payout = Math.floor(bet * 2.5);
         state.points += payout;
+
+        // Record Natural Blackjack Stat Update
+        if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
+        state.stats.totalHands += 1;
+        state.stats.wins += 1;
+        state.stats.netProfit = state.points - 1000;
+
+        const logMsg = `[BJ] Natural Blackjack! Bet ${bet} | Won +${payout} | Balance: ${state.points}`;
+        if (!state.history) state.history = [];
+        state.history.unshift(logMsg);
+        if (state.history.length > 20) state.history.pop();
+
         state.game = {
           deck,
           hands: [playerHand],
@@ -1081,7 +1103,7 @@
         };
         sfx.win();
         setBanner(`BLACKJACK! NATURAL 21! YOU WON +${payout} CHIPS!`, "blackjack");
-        saveState();
+        saveStateAndDatabase();
         renderUI();
         state.game = null;
         updateControlsVisibility(false);
@@ -1102,7 +1124,7 @@
 
       const aceHint = dealerHand[0].v === "A" ? " DEALER SHOWS ACE — INSURANCE AVAILABLE!" : "";
       setBanner(`BET: ${bet} CHIPS. YOUR MOVE: HIT OR STAND?${aceHint}`, "");
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1171,7 +1193,7 @@
       g.activeHandIndex = 0;
 
       setBanner(`HAND SPLIT! PLAYING HAND 1 (${calcScore(hand1)}).`, "");
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1201,7 +1223,7 @@
         if (g.isSplit && idx === 0) {
           g.activeHandIndex = 1;
           setBanner(`DOUBLE DOWN BUST ON HAND 1! PLAYING HAND 2.`, "lose");
-          saveState();
+          saveStateAndDatabase();
           renderUI();
         } else {
           resolveAllHands();
@@ -1230,7 +1252,7 @@
       g.insuranceCost = cost;
 
       setBanner(`INSURANCE LOCKED (${cost} CHIPS)! CONTINUE YOUR HAND.`, "");
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1256,8 +1278,9 @@
       }
 
       const isDealerBlackjack = (g.dealer.length === 2 && dScore === 21);
-      let netProfit = 0;
-      let totalReturned = 0;
+      let netProfitChange = 0;
+      let handWon = false;
+      let handLost = false;
       const results = [];
 
       if (g.hasInsurance) {
@@ -1277,26 +1300,39 @@
 
         if (hScore > 21) {
           results.push(`${prefix}BUST`);
-          netProfit -= hBet;
+          netProfitChange -= hBet;
+          handLost = true;
         } else if (dScore > 21 || hScore > dScore) {
           const payout = hBet * 2;
           state.points += payout;
-          totalReturned += payout;
-          netProfit += hBet;
+          netProfitChange += hBet;
+          handWon = true;
           results.push(`${prefix}WIN (+${payout})`);
         } else if (hScore === dScore) {
           state.points += hBet;
-          totalReturned += hBet;
           results.push(`${prefix}PUSH`);
         } else {
           results.push(`${prefix}LOST`);
-          netProfit -= hBet;
+          netProfitChange -= hBet;
+          handLost = true;
         }
       });
 
-      const bannerType = netProfit > 0 ? "win" : (netProfit < 0 ? "lose" : "");
-      if (netProfit > 0) sfx.win();
-      else if (netProfit < 0) sfx.bust();
+      // UPDATE STATS & HISTORY LEDGER
+      if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
+      state.stats.totalHands += g.hands.length;
+      if (handWon) state.stats.wins++;
+      if (handLost) state.stats.losses++;
+      state.stats.netProfit = state.points - 1000;
+
+      const logMsg = `[BJ] Bet ${g.bets[0]} | ${results.join(", ")} | Balance: ${state.points}`;
+      if (!state.history) state.history = [];
+      state.history.unshift(logMsg);
+      if (state.history.length > 20) state.history.pop();
+
+      const bannerType = netProfitChange > 0 ? "win" : (netProfitChange < 0 ? "lose" : "");
+      if (netProfitChange > 0) sfx.win();
+      else if (netProfitChange < 0) sfx.bust();
 
       setBanner(`DEALER (${dScore}) — ${results.join(" | ")}`, bannerType);
 
@@ -1304,7 +1340,7 @@
         state.currentBet = state.points;
       }
 
-      saveState();
+      saveStateAndDatabase();
       renderUI();
 
       state.game = null;
@@ -1325,10 +1361,17 @@
 
       state.points += 500;
       state.lastDaily = now;
+      state.stats.netProfit = state.points - 1000;
+
+      const logMsg = `[DAILY] Claimed +500 chips bonus`;
+      if (!state.history) state.history = [];
+      state.history.unshift(logMsg);
+      if (state.history.length > 20) state.history.pop();
+
       if (state.currentBet === 0 && state.points >= 50) state.currentBet = 50;
       sfx.win();
       setBanner(`CLAIMED +500 DAILY BONUS CHIPS! NEW BALANCE: ${state.points} CHIPS.`, "win");
-      saveState();
+      saveStateAndDatabase();
       renderUI();
     }
 
@@ -1347,10 +1390,17 @@
       const pick = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
       state.points += pick.points;
       state.lastFortune = now;
+      state.stats.netProfit = state.points - 1000;
+
+      const logMsg = `[FORTUNE] Gained +${pick.points} chips`;
+      if (!state.history) state.history = [];
+      state.history.unshift(logMsg);
+      if (state.history.length > 20) state.history.pop();
+
       if (state.currentBet === 0 && state.points >= 50) state.currentBet = 50;
 
       sfx.win();
-      saveState();
+      saveStateAndDatabase();
       renderUI();
 
       document.getElementById('fortune-text').textContent = `"${pick.text}"`;
