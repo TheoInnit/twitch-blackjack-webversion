@@ -78,8 +78,14 @@
 
     .history-box {
       height: 140px; background: #09090b; border: 3px solid var(--pixel-border); padding: 8px;
-      font-size: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: #94a3b8;
+      font-size: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; color: #94a3b8;
     }
+
+    /* Keyword highlight colors */
+    .hl-win { color: #4ade80; font-weight: bold; }
+    .hl-loss { color: #f87171; font-weight: bold; }
+    .hl-bust { color: #ef4444; font-weight: bold; }
+    .hl-push { color: var(--gold); font-weight: bold; }
 
     /* Custom Retro Pixel Scrollbar */
     .history-box::-webkit-scrollbar {
@@ -290,6 +296,20 @@
       }
     }
 
+    // Helper function to color specific outcome keywords in activity log lines
+    function formatActivityLine(text) {
+      // Escape HTML chars to keep it safe
+      let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      // Replace keywords with colored spans
+      safeText = safeText.replace(/\b(WIN)\b/g, '<span class="hl-win">$1</span>');
+      safeText = safeText.replace(/\b(LOST)\b/g, '<span class="hl-loss">$1</span>');
+      safeText = safeText.replace(/\b(BUST)\b/g, '<span class="hl-bust">$1</span>');
+      safeText = safeText.replace(/\b(PUSH)\b/g, '<span class="hl-push">$1</span>');
+
+      return safeText;
+    }
+
     function renderUI() {
       document.getElementById('wallet-balance').textContent = state.points;
 
@@ -305,7 +325,7 @@
       if (!state.history || state.history.length === 0) {
         historyBox.innerHTML = `<p style="color: #64748b;">No recent activity recorded in database yet.</p>`;
       } else {
-        historyBox.innerHTML = state.history.map(item => `<p>${item}</p>`).join('');
+        historyBox.innerHTML = state.history.map(item => `<p>${formatActivityLine(item)}</p>`).join('');
       }
     }
 
