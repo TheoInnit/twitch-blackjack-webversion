@@ -77,6 +77,15 @@
     }
     .stat-card span.val { color: #4ade80; }
 
+    .filter-tabs {
+      display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .filter-tab {
+      background: #0f0d17; color: #94a3b8; border: 2px solid var(--pixel-border);
+      padding: 6px 8px; font-size: 7px; cursor: pointer; font-family: 'Press Start 2P', monospace;
+    }
+    .filter-tab.active { background: var(--gold); color: #18181b; border-color: var(--pixel-border); }
+
     .history-box {
       height: 140px; background: #09090b; border: 3px solid var(--pixel-border); padding: 8px;
       font-size: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; color: #94a3b8;
@@ -152,7 +161,7 @@
 
     <!-- SAVINGS BANK VAULT -->
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
-      <div class="section-title"><span>SAVINGS BANK VAULT</span></div>
+      <div class="section-title"><span>SAVINGS BANK VAULT (EARNS 2% DAILY)</span></div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div>
           <div style="font-size: 8px; color: #94a3b8;">SAVED BALANCE</div>
@@ -179,6 +188,12 @@
     <!-- BETTING HISTORY LEDGER -->
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
       <div class="section-title"><span>RECENT ACTIVITY</span></div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">ALL</button>
+        <button class="filter-tab" onclick="setFilter('bj', this)">GAMES</button>
+        <button class="filter-tab" onclick="setFilter('bank', this)">BANK</button>
+        <button class="filter-tab" onclick="setFilter('gift', this)">GIFTS</button>
+      </div>
       <div class="history-box" id="history-box">
         <p style="color: #64748b;">Loading activity from Google Sheets database...</p>
       </div>
@@ -215,7 +230,7 @@
         <button class="pixel-btn btn-red" style="padding: 4px 8px; font-size: 8px;" onclick="closeBankModal()">X</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <label style="font-size: 8px; color: #94a3b8;" id="bank-label">AMOUNT:</label>
+        <label style="font-size: 8px; color: #94a3b8;">AMOUNT:</label>
         <input type="number" id="bank-amount" class="modal-input" min="1" value="100" />
       </div>
       <button class="pixel-btn btn-gold" style="font-size: 10px; margin-top: 6px;" id="bank-submit-btn" onclick="submitBankAction()">
@@ -237,6 +252,7 @@
     };
 
     let currentBankMode = 'deposit';
+    let currentFilter = 'all';
 
     async function loadState() {
       try {
@@ -249,7 +265,6 @@
 
       document.getElementById('wallet-username').textContent = state.username;
 
-      // Instantly query the Google Sheet database for live stats & history
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
         try {
           const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=walletdata&format=json`;
@@ -395,15 +410,19 @@
       }
     }
 
-    // Helper function to color specific outcome keywords in activity log lines
+    function setFilter(filterType, btnElement) {
+      currentFilter = filterType;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btnElement.classList.add('active');
+      renderUI();
+    }
+
     function formatActivityLine(text) {
       let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
       safeText = safeText.replace(/\b(WIN)\b/g, '<span class="hl-win">$1</span>');
       safeText = safeText.replace(/\b(LOST)\b/g, '<span class="hl-loss">$1</span>');
       safeText = safeText.replace(/\b(BUST)\b/g, '<span class="hl-bust">$1</span>');
       safeText = safeText.replace(/\b(PUSH)\b/g, '<span class="hl-push">$1</span>');
-
       return safeText;
     }
 
@@ -423,7 +442,18 @@
       if (!state.history || state.history.length === 0) {
         historyBox.innerHTML = `<p style="color: #64748b;">No recent activity recorded in database yet.</p>`;
       } else {
-        historyBox.innerHTML = state.history.map(item => `<p>${formatActivityLine(item)}</p>`).join('');
+        let filteredHistory = state.history.filter(item => {
+          if (currentFilter === 'bj') return item.includes('[CHAT BJ]');
+          if (currentFilter === 'bank') return item.includes('[BANK]');
+          if (currentFilter === 'gift') return item.includes('[GIFT]');
+          return true; // 'all'
+        });
+
+        if (filteredHistory.length === 0) {
+          historyBox.innerHTML = `<p style="color: #64748b;">No activity found for this filter category.</p>`;
+        } else {
+          historyBox.innerHTML = filteredHistory.map(item => `<p>${formatActivityLine(item)}</p>`).join('');
+        }
       }
     }
 
