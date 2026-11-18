@@ -88,6 +88,7 @@
 
     .btn-twitch { background: var(--twitch-purple); color: #fff; }
     .btn-slate { background: #475569; color: #f8fafc; }
+    .btn-gold { background: var(--gold); color: #18181b; }
 
     .hud-header {
       width: 100%;
@@ -171,25 +172,23 @@
 
     .status-banner {
       background: #09090b;
-      border: 4px solid #ffffff;
-      padding: 12px 16px;
-      text-align: center;
-      font-size: 9px;
-      line-height: 1.6;
-      color: #f8fafc;
+      border: 4px solid #4ade80;
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 8px;
+      line-height: 1.8;
+      color: #4ade80;
       width: 100%;
+      max-width: 520px;
       display: none;
     }
-    .status-banner.success { border-color: #4ade80; color: #4ade80; display: block; }
-    .status-banner.error { border-color: #f87171; color: #f87171; display: block; }
 
-    /* Subtle Kick Option Styling */
     .subtle-kick-wrap {
-      margin-top: 8px;
+      margin-top: 4px;
     }
     .subtle-kick-link {
       font-size: 7px;
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.25);
       text-decoration: none;
       transition: color 0.1s;
     }
@@ -219,32 +218,39 @@
       </svg>
       <span>TWITCH BLACKJACK</span>
     </a>
-    <a href="index.html" class="pixel-btn btn-slate" style="font-size: 9px; padding: 8px 12px;">PLAY GAME</a>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="index.html" class="pixel-btn btn-slate" style="font-size: 8px; padding: 8px 10px;">PLAY GAME</a>
+      <button class="pixel-btn btn-red" id="btn-logout" style="font-size: 8px; padding: 8px 10px; display: none;" onclick="logoutUser()">LOGOUT</button>
+    </div>
   </header>
 
   <!-- MAIN INVITE CONTENT -->
   <main class="invite-container">
     <div class="invite-card pixel-box">
-      <div style="font-size: 32px;">♠️</div>
-      <h1 class="invite-heading">Invite Twitch Chat Blackjack Bot</h1>
-      <p class="invite-description">
+      <div style="font-size: 32px;" id="card-icon">♠️</div>
+      <h1 class="invite-heading" id="card-title">Invite Twitch Chat Blackjack Bot</h1>
+      <p class="invite-description" id="card-desc">
         Add the 8-bit casino bot to your channel chat room. Let your viewers play interactive blackjack, collect daily chips, and check leaderboards directly in your chat!
       </p>
 
-      <div class="features-list">
+      <div class="features-list" id="features-box">
         <div class="feature-item">✓ <span>Invite-only security: Only approved channels can host the bot.</span></div>
         <div class="feature-item">✓ <span>Interactive commands: !blackjack, !hit, !stand, !points, !daily & more.</span></div>
         <div class="feature-item">✓ <span>Persistent cloud stats tracked safely via Google Sheets database.</span></div>
       </div>
 
-      <div id="response-banner" class="status-banner"></div>
+      <!-- SUCCESS / ACTIVE STATE BANNER -->
+      <div id="success-banner" class="status-banner"></div>
 
-      <button class="pixel-btn btn-twitch" style="font-size: 10px; padding: 14px 24px;" onclick="authorizeBot()">
-        <svg width="14" height="14" viewBox="0 0 12 12" fill="#ffffff">
-          <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
-        </svg>
-        AUTHORIZE & INVITE BOT
-      </button>
+      <!-- ACTION BUTTONS -->
+      <div id="action-area">
+        <button class="pixel-btn btn-twitch" style="font-size: 10px; padding: 14px 24px;" onclick="authorizeBot()">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="#ffffff">
+            <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
+          </svg>
+          AUTHORIZE & INVITE BOT
+        </button>
+      </div>
 
       <!-- Subtle Kick Option -->
       <div class="subtle-kick-wrap">
@@ -261,19 +267,100 @@
   <script>
     const TWITCH_CLIENT_ID = 'z4ylqbpm3ivqtxcj9h2iabfy2wajr6';
     const RENDER_CALLBACK_URL = 'https://twitch-chatdealer-bot.onrender.com/callback';
+    const STORAGE_KEY = 'chatdealer_invited_channel';
+
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
+
+    async function initPage() {
+      // 1. Check if returning from Twitch OAuth authorization (Implicit grant token in hash)
+      if (window.location.hash && window.location.hash.includes('access_token=')) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const token = params.get('access_token');
+        if (token) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+          await fetchAndSaveUser(token);
+        }
+      }
+
+      // 2. Check local storage for persistent recognition across browser sessions
+      const savedChannel = localStorage.getItem(STORAGE_KEY);
+      if (savedChannel) {
+        setSuccessViewState(savedChannel);
+      }
+    }
+
+    async function fetchAndSaveUser(token) {
+      try {
+        const res = await fetch('https://api.twitch.tv/helix/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Client-Id': TWITCH_CLIENT_ID
+          }
+        });
+        const data = await res.json();
+        if (data.data && data.data[0]) {
+          const username = data.data[0].login.toLowerCase();
+          localStorage.setItem(STORAGE_KEY, username);
+          
+          // Also register it with Google Sheet backend just in case
+          fetch(`${GOOGLE_SCRIPT_URL}?action=addChannel&channel=${encodeURIComponent(username)}`).catch(() => {});
+
+          setSuccessViewState(username);
+        }
+      } catch (err) {
+        console.error('Failed to fetch Twitch user:', err);
+      }
+    }
+
+    function setSuccessViewState(username) {
+      document.getElementById('card-icon').textContent = '✨';
+      document.getElementById('card-title').textContent = `BOT ACTIVE IN #${username.toUpperCase()}`;
+      document.getElementById('card-desc').textContent = `ChatDealer is successfully connected and running in your Twitch chat room!`;
+      document.getElementById('features-box').style.display = 'none';
+
+      const banner = document.getElementById('success-banner');
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <strong style="color: #facc15;">SUCCESS! BOT IS ACTIVE</strong><br><br>
+        • Play in chat by typing: <code style="background:#14121d; padding:2px 4px; color:#f8fafc;">!blackjack &lt;bet&gt;</code><br>
+        • Check balances: <code style="background:#14121d; padding:2px 4px; color:#f8fafc;">!points</code> or <code style="background:#14121d; padding:2px 4px; color:#f8fafc;">!daily</code><br>
+        • Or test the web version directly via the top navigation!
+      `;
+
+      // Replace action button with a quick play link
+      document.getElementById('action-area').innerHTML = `
+        <a href="index.html" class="pixel-btn btn-gold" style="font-size: 10px; padding: 14px 24px; text-decoration:none;">
+          PLAY WEB VERSION
+        </a>
+      `;
+
+      document.getElementById('btn-logout').style.display = 'inline-flex';
+    }
 
     function authorizeBot() {
-      const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(RENDER_CALLBACK_URL)}&response_type=code&scope=user:read:email`;
+      // Use implicit grant so we can capture the user profile right on the page
+      const redirectUri = window.location.origin + window.location.pathname;
+      const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
       window.location.href = authUrl;
+    }
+
+    function logoutUser() {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.href = window.location.pathname;
     }
 
     function triggerKick(e) {
       e.preventDefault();
-      const channel = prompt("Enter the Twitch channel name to remove the bot from:");
+      const current = localStorage.getItem(STORAGE_KEY) || '';
+      const channel = prompt("Enter the Twitch channel name to remove the bot from:", current);
       if (channel) {
-        alert(`Removal request logged for #${channel.trim().toLowerCase()}. Make sure to clear it from your Allowed Channels sheet.`);
+        localStorage.removeItem(STORAGE_KEY);
+        alert(`Removal request noted for #${channel.trim().toLowerCase()}. Make sure to remove it from your Allowed Channels sheet.`);
+        window.location.reload();
       }
     }
+
+    window.addEventListener('DOMContentLoaded', initPage);
   </script>
 </body>
 </html>
