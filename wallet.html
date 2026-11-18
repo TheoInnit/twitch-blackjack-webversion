@@ -109,7 +109,7 @@
 
   <header class="hud-header pixel-box">
     <div style="font-size: 11px; color: var(--gold); display: flex; align-items: center; gap: 8px;">
-      <span>💼 PLAYER WALLET</span>
+      <span>💼 PLAYER WALLET (<span id="wallet-username">GUEST</span>)</span>
     </div>
     <div style="display: flex; align-items: center; gap: 10px;">
       <a href="index.html" class="pixel-btn btn-slate" style="text-decoration: none; font-size: 8px; padding: 8px 10px;">&larr; GAME</a>
@@ -129,7 +129,7 @@
 
     <!-- LIFETIME STATISTICS -->
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
-      <div class="section-title"><span>📊 LIFETIME STATS</span></div>
+      <div class="section-title"><span>📊 LIFETIME STATS (DATABASE SYNCED)</span></div>
       <div class="stats-grid">
         <div class="stat-card"><span>TOTAL HANDS:</span> <span class="val" id="stat-total">0</span></div>
         <div class="stat-card"><span>WIN RATE:</span> <span class="val" id="stat-winrate">0%</span></div>
@@ -142,7 +142,7 @@
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
       <div class="section-title"><span>📜 RECENT ACTIVITY</span></div>
       <div class="history-box" id="history-box">
-        <p style="color: #64748b;">No recent betting history yet. Play a hand on the game table!</p>
+        <p style="color: #64748b;">Loading activity from Google Sheets database...</p>
       </div>
     </div>
 
@@ -186,22 +186,23 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           state = { ...state, ...parsed };
-          if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
-          if (!state.history) state.history = [];
         }
       } catch (e) { console.error(e); }
 
-      // Auto-sync current points from Google Sheets on load
+      document.getElementById('wallet-username').textContent = state.username;
+
+      // Instantly query the Google Sheet database for live stats & history
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
         try {
-          const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=points&format=json`;
+          const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=walletdata&format=json`;
           const res = await fetch(url);
           const data = await res.json();
-          if (data && typeof data.points === 'number') {
+          if (data && data.success) {
             state.points = data.points;
-            saveState();
+            state.stats = data.stats;
+            state.history = data.history || [];
           }
-        } catch (e) { console.error("Sheet sync error:", e); }
+        } catch (e) { console.error("Database sync error:", e); }
       }
       renderUI();
     }
@@ -209,10 +210,6 @@
     async function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
-          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=save&arg=${state.points}&format=json`;
-          fetch(syncUrl).catch(err => console.error("Sheet sync error:", err));
-        }
       } catch (e) { console.error(e); }
     }
 
@@ -226,55 +223,38 @@
       document.getElementById('gift-modal').classList.remove('open');
     }
 
-    // Instant Case-Insensitive Google Sheet Chip Gifting
     async function submitGiftChips() {
       const rawName = document.getElementById('gift-username').value.trim();
       const amount = parseInt(document.getElementById('gift-amount').value, 10);
 
-      if (!rawName) {
-        alert("Please enter a valid Twitch username!");
-        return;
-      }
-      if (isNaN(amount) || amount <= 0) {
-        alert("Please enter a valid chip amount!");
+      if (!rawName || isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid username and amount!");
         return;
       }
       if (amount > state.points) {
-        alert("You do not have enough chips to gift that amount!");
+        alert("You do not have enough chips!");
         return;
       }
 
-      // Convert target username to uppercase for case-insensitive processing
       const targetUser = rawName.toUpperCase();
-
-      if (state.username !== 'GUEST' && targetUser === state.username) {
+      if (targetUser === state.username) {
         alert("You cannot gift chips to yourself!");
         return;
       }
 
       closeGiftModal();
 
-      // If logged in as GUEST, perform local-only fallback
-      if (!state.username || state.username === 'GUEST' || !GOOGLE_SCRIPT_URL) {
-        state.points -= amount;
-        state.stats.netProfit -= amount;
-        const logMsg = `[GIFT] Sent ${amount} chips to @${targetUser}`;
-        state.history.unshift(logMsg);
-        if (state.history.length > 20) state.history.pop();
-        saveState();
-        renderUI();
-        alert(`Successfully sent ${amount} chips to @${targetUser} (Guest mode)!`);
+      if (state.username === 'GUEST' || !GOOGLE_SCRIPT_URL) {
+        alert("You must be logged in via Twitch to gift chips to other players.");
         return;
       }
 
-      // Instant Google Sheet API Request for Gifting
       try {
         const giftUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=gift&recipient=${encodeURIComponent(targetUser)}&amount=${amount}&format=json`;
         const res = await fetch(giftUrl);
         const data = await res.json();
 
         if (data && data.success) {
-          // Update local state instantly with server response
           state.points = data.senderNewPoints;
           state.stats.netProfit -= amount;
 
@@ -289,15 +269,14 @@
           alert("Failed to process gift: " + (data.message || "Unknown error"));
         }
       } catch (err) {
-        console.error("Gift transaction error:", err);
-        alert("Network error connecting to Google Sheets.");
+        console.error("Gift error:", err);
+        alert("Network error connecting to database.");
       }
     }
 
     function renderUI() {
       document.getElementById('wallet-balance').textContent = state.points;
 
-      // Stats calculations
       const s = state.stats;
       const winRate = s.totalHands > 0 ? ((s.wins / s.totalHands) * 100).toFixed(1) : 0;
       
@@ -306,21 +285,13 @@
       document.getElementById('stat-record').textContent = `${s.wins} / ${s.losses}`;
       document.getElementById('stat-profit').textContent = (s.netProfit >= 0 ? '+' : '') + s.netProfit;
 
-      // Render History Ledger
       const historyBox = document.getElementById('history-box');
-      if (state.history.length === 0) {
-        historyBox.innerHTML = `<p style="color: #64748b;">No recent betting history yet. Play a hand on the game table!</p>`;
+      if (!state.history || state.history.length === 0) {
+        historyBox.innerHTML = `<p style="color: #64748b;">No recent activity recorded in database yet.</p>`;
       } else {
         historyBox.innerHTML = state.history.map(item => `<p>${item}</p>`).join('');
       }
     }
-
-    // Real-time listener so changes from index.html reflect here instantly
-    window.addEventListener('storage', (event) => {
-      if (event.key === STORAGE_KEY) {
-        loadState();
-      }
-    });
 
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
