@@ -271,7 +271,7 @@
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
 
     async function initPage() {
-      // 1. Bind event listeners dynamically so scope is clean
+      // 1. Bind event listeners dynamically
       const authBtn = document.getElementById('auth-btn');
       if (authBtn) {
         authBtn.addEventListener('click', authorizeBot);
@@ -374,7 +374,12 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', initPage);
+    // Run immediately if DOM is ready, otherwise wait for event
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+      initPage();
+    }
   </script>
 </body>
 </html>
