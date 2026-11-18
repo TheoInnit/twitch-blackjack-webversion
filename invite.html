@@ -89,6 +89,7 @@
     .btn-twitch { background: var(--twitch-purple); color: #fff; }
     .btn-slate { background: #475569; color: #f8fafc; }
     .btn-gold { background: var(--gold); color: #18181b; }
+    .btn-red { background: #ef4444; color: #fff; }
 
     .hud-header {
       width: 100%;
@@ -266,9 +267,7 @@
 
   <script>
     const TWITCH_CLIENT_ID = 'z4ylqbpm3ivqtxcj9h2iabfy2wajr6';
-    const RENDER_CALLBACK_URL = 'https://twitch-chatdealer-bot.onrender.com/callback';
     const STORAGE_KEY = 'chatdealer_invited_channel';
-
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
 
     async function initPage() {
@@ -302,7 +301,7 @@
           const username = data.data[0].login.toLowerCase();
           localStorage.setItem(STORAGE_KEY, username);
           
-          // Also register it with Google Sheet backend just in case
+          // Register it with Google Sheet backend
           fetch(`${GOOGLE_SCRIPT_URL}?action=addChannel&channel=${encodeURIComponent(username)}`).catch(() => {});
 
           setSuccessViewState(username);
@@ -338,7 +337,6 @@
     }
 
     function authorizeBot() {
-      // Use implicit grant so we can capture the user profile right on the page
       const redirectUri = window.location.origin + window.location.pathname;
       const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
       window.location.href = authUrl;
