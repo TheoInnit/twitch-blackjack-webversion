@@ -81,6 +81,22 @@
       font-size: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: #94a3b8;
     }
 
+    /* Custom Retro Pixel Scrollbar */
+    .history-box::-webkit-scrollbar {
+      width: 10px;
+    }
+    .history-box::-webkit-scrollbar-track {
+      background: #0f0d17;
+      border-left: 2px solid var(--pixel-border);
+    }
+    .history-box::-webkit-scrollbar-thumb {
+      background: #475569;
+      border: 2px solid var(--pixel-border);
+    }
+    .history-box::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
     /* Modal / Window Overlay */
     .modal-backdrop {
       position: fixed; inset: 0; background: rgba(9, 9, 11, 0.84);
@@ -109,7 +125,7 @@
 
   <header class="hud-header pixel-box">
     <div style="font-size: 11px; color: var(--gold); display: flex; align-items: center; gap: 8px;">
-      <span>💼 PLAYER WALLET (<span id="wallet-username">GUEST</span>)</span>
+      <span>PLAYER WALLET (<span id="wallet-username">GUEST</span>)</span>
     </div>
     <div style="display: flex; align-items: center; gap: 10px;">
       <a href="index.html" class="pixel-btn btn-slate" style="text-decoration: none; font-size: 8px; padding: 8px 10px;">&larr; GAME</a>
@@ -129,7 +145,7 @@
 
     <!-- LIFETIME STATISTICS -->
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
-      <div class="section-title"><span>📊 LIFETIME STATS (DATABASE SYNCED)</span></div>
+      <div class="section-title"><span>LIFETIME STATS (DATABASE SYNCED)</span></div>
       <div class="stats-grid">
         <div class="stat-card"><span>TOTAL HANDS:</span> <span class="val" id="stat-total">0</span></div>
         <div class="stat-card"><span>WIN RATE:</span> <span class="val" id="stat-winrate">0%</span></div>
@@ -140,7 +156,7 @@
 
     <!-- BETTING HISTORY LEDGER -->
     <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
-      <div class="section-title"><span>📜 RECENT ACTIVITY</span></div>
+      <div class="section-title"><span>RECENT ACTIVITY</span></div>
       <div class="history-box" id="history-box">
         <p style="color: #64748b;">Loading activity from Google Sheets database...</p>
       </div>
@@ -264,7 +280,7 @@
 
           saveState();
           renderUI();
-          alert(`🎁 Successfully gifted ${amount} chips to @${targetUser}! Transaction complete.`);
+          alert(`Successfully gifted ${amount} chips to @${targetUser}! Transaction complete.`);
         } else {
           alert("Failed to process gift: " + (data.message || "Unknown error"));
         }
