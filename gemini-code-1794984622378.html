@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWITCH CHAT - PLAYER WALLET</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' fill='%23facc15'%3E%3Cpath d='M5 1h1v1h1v1h1v1h1v1h1v2H9v1H7V7H6v2h2v1H3V9h2V7H4v1H2V7H1V5h1V4h1V3h1V2h1V1z'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #14121d;
+      --panel-bg: #1e1b2e;
+      --gold: #facc15;
+      --pixel-border: #09090b;
+      --twitch-purple: #9146ff;
+    }
+
+    * { box-sizing: border-box; user-select: none; image-rendering: pixelated; }
+
+    body {
+      margin: 0; padding: 0;
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(#231f33 2px, transparent 2px), radial-gradient(#1b1829 2px, #14121d 2px);
+      background-size: 32px 32px; background-position: 0 0, 16px 16px;
+      font-family: 'Press Start 2P', monospace;
+      color: #ffffff; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+    }
+
+    .pixel-box {
+      border: 4px solid var(--pixel-border);
+      box-shadow: inset -4px -4px 0px rgba(0, 0, 0, 0.35), inset 4px 4px 0px rgba(255, 255, 255, 0.18), 0 6px 0 var(--pixel-border);
+    }
+
+    .pixel-btn {
+      font-family: 'Press Start 2P', monospace;
+      border: 4px solid var(--pixel-border);
+      padding: 10px 14px; cursor: pointer; text-transform: uppercase;
+      box-shadow: inset -4px -4px 0px rgba(0, 0, 0, 0.4), inset 4px 4px 0px rgba(255, 255, 255, 0.25), 0 4px 0 var(--pixel-border);
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 9px;
+    }
+    .pixel-btn:active { transform: translateY(4px); box-shadow: inset -2px -2px 0 rgba(0,0,0,0.4), 0 0px 0 var(--pixel-border); }
+    .pixel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-gold { background: var(--gold); color: #18181b; }
+    .btn-twitch { background: var(--twitch-purple); color: #fff; }
+    .btn-slate { background: #475569; color: #f8fafc; }
+    .btn-green { background: #22c55e; color: #052e16; }
+    .btn-red { background: #ef4444; color: #fff; }
+
+    .hud-header {
+      width: 100%; max-width: 600px; padding: 12px 16px; margin-top: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--panel-bg); border-bottom: 4px solid var(--pixel-border);
+    }
+
+    .main-container {
+      width: 100%; max-width: 600px; padding: 20px; display: flex; flex-direction: column; gap: 16px; flex: 1;
+    }
+
+    .section-title {
+      font-size: 11px; color: var(--gold); border-bottom: 3px solid var(--pixel-border); padding-bottom: 8px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    }
+
+    .stat-card {
+      background: #0f0d17; border: 3px solid var(--pixel-border); padding: 10px;
+      display: flex; flex-direction: column; gap: 6px; font-size: 9px;
+    }
+    .stat-card span.val { color: #4ade80; }
+
+    .history-box {
+      height: 140px; background: #09090b; border: 3px solid var(--pixel-border); padding: 8px;
+      font-size: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; color: #94a3b8;
+    }
+
+    /* Modal / Window Overlay */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(9, 9, 11, 0.84);
+      display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      background: var(--panel-bg); width: 100%; max-width: 400px; padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .modal-title {
+      font-size: 11px; color: var(--gold); display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 4px solid var(--pixel-border); padding-bottom: 8px;
+    }
+
+    .modal-input {
+      font-family: 'Press Start 2P', monospace; font-size: 10px; width: 100%; padding: 10px;
+      background: #09090b; color: var(--gold); border: 4px solid #475569; outline: none; text-transform: uppercase;
+    }
+    .modal-input:focus { border-color: var(--gold); }
+  </style>
+</head>
+<body>
+
+  <header class="hud-header pixel-box">
+    <div style="font-size: 11px; color: var(--gold); display: flex; align-items: center; gap: 8px;">
+      <span>💼 PLAYER WALLET</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="index.html" class="pixel-btn btn-slate" style="text-decoration: none; font-size: 8px; padding: 8px 10px;">&larr; GAME</a>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- BALANCE & GIFT BUTTON -->
+    <div class="pixel-box" style="padding: 16px; background: var(--panel-bg); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 9px; color: #94a3b8;">WALLET BALANCE</div>
+        <div style="font-size: 16px; color: #4ade80; margin-top: 4px;"><span id="wallet-balance">1000</span> CHIPS</div>
+      </div>
+      <button class="pixel-btn btn-twitch" onclick="openGiftModal()">GIFT CHIPS</button>
+    </div>
+
+    <!-- LIFETIME STATISTICS -->
+    <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
+      <div class="section-title"><span>📊 LIFETIME STATS</span></div>
+      <div class="stats-grid">
+        <div class="stat-card"><span>TOTAL HANDS:</span> <span class="val" id="stat-total">0</span></div>
+        <div class="stat-card"><span>WIN RATE:</span> <span class="val" id="stat-winrate">0%</span></div>
+        <div class="stat-card"><span>WINS / LOSSES:</span> <span class="val" id="stat-record">0 / 0</span></div>
+        <div class="stat-card"><span>NET PROFIT:</span> <span class="val" id="stat-profit">0</span></div>
+      </div>
+    </div>
+
+    <!-- BETTING HISTORY LEDGER -->
+    <div class="pixel-box" style="padding: 16px; background: var(--panel-bg);">
+      <div class="section-title"><span>📜 RECENT ACTIVITY</span></div>
+      <div class="history-box" id="history-box">
+        <p style="color: #64748b;">No recent betting history yet. Play a hand on the game table!</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- GIFT CHIPS MODAL WINDOW -->
+  <div class="modal-backdrop" id="gift-modal">
+    <div class="modal-card pixel-box">
+      <div class="modal-title">
+        <span>GIFT CHIPS TO VIEWER</span>
+        <button class="pixel-btn btn-red" style="padding: 4px 8px; font-size: 8px;" onclick="closeGiftModal()">X</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 8px; color: #94a3b8;">TWITCH USERNAME:</label>
+        <input type="text" id="gift-username" class="modal-input" placeholder="ENTER NAME..." />
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 8px; color: #94a3b8;">CHIP AMOUNT:</label>
+        <input type="number" id="gift-amount" class="modal-input" min="1" value="100" />
+      </div>
+      <button class="pixel-btn btn-green" style="font-size: 10px; margin-top: 6px;" onclick="submitGiftChips()">
+        ACCEPT & GIFT
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
+    const STORAGE_KEY = 'pixel_blackjack_save_v6';
+
+    let state = {
+      username: 'GUEST',
+      points: 1000,
+      stats: { totalHands: 0, wins: 0, losses: 0, netProfit: 0 },
+      history: []
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = { ...state, ...parsed };
+          if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
+          if (!state.history) state.history = [];
+        }
+      } catch (e) { console.error(e); }
+      renderUI();
+    }
+
+    async function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=save&arg=${state.points}&format=json`;
+          fetch(syncUrl).catch(err => console.error("Sheet sync error:", err));
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function openGiftModal() {
+      document.getElementById('gift-username').value = '';
+      document.getElementById('gift-amount').value = '100';
+      document.getElementById('gift-modal').classList.add('open');
+    }
+
+    function closeGiftModal() {
+      document.getElementById('gift-modal').classList.remove('open');
+    }
+
+    // Case-insensitive chip gifting mechanism
+    function submitGiftChips() {
+      const rawName = document.getElementById('gift-username').value.trim();
+      const amount = parseInt(document.getElementById('gift-amount').value, 10);
+
+      if (!rawName) {
+        alert("Please enter a valid Twitch username!");
+        return;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid chip amount!");
+        return;
+      }
+      if (amount > state.points) {
+        alert("You do not have enough chips to gift that amount!");
+        return;
+      }
+
+      // Convert target username to uppercase for case-insensitive processing
+      const targetUser = rawName.toUpperCase();
+
+      state.points -= amount;
+      state.stats.netProfit -= amount;
+      
+      const logMsg = `[GIFT] Sent ${amount} chips to @${targetUser}`;
+      state.history.unshift(logMsg);
+      if (state.history.length > 20) state.history.pop();
+
+      saveState();
+      renderUI();
+      closeGiftModal();
+      alert(`Successfully sent ${amount} chips to @${targetUser}!`);
+    }
+
+    function renderUI() {
+      document.getElementById('wallet-balance').textContent = state.points;
+
+      // Stats calculations
+      const s = state.stats;
+      const winRate = s.totalHands > 0 ? ((s.wins / s.totalHands) * 100).toFixed(1) : 0;
+      
+      document.getElementById('stat-total').textContent = s.totalHands;
+      document.getElementById('stat-winrate').textContent = winRate + '%';
+      document.getElementById('stat-record').textContent = `${s.wins} / ${s.losses}`;
+      document.getElementById('stat-profit').textContent = (s.netProfit >= 0 ? '+' : '') + s.netProfit;
+
+      // Render History Ledger
+      const historyBox = document.getElementById('history-box');
+      if (state.history.length === 0) {
+        historyBox.innerHTML = `<p style="color: #64748b;">No recent betting history yet. Play a hand on the game table!</p>`;
+      } else {
+        historyBox.innerHTML = state.history.map(item => `<p>${item}</p>`).join('');
+      }
+    }
+
+    // Real-time listener so changes from index.html reflect here instantly
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY) {
+        loadState();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+    });
+  </script>
+</body>
+</html>
