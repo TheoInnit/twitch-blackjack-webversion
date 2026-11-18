@@ -180,7 +180,7 @@
       history: []
     };
 
-    function loadState() {
+    async function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -190,6 +190,19 @@
           if (!state.history) state.history = [];
         }
       } catch (e) { console.error(e); }
+
+      // Auto-sync current points from Google Sheets on load
+      if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+        try {
+          const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=points&format=json`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data && typeof data.points === 'number') {
+            state.points = data.points;
+            saveState();
+          }
+        } catch (e) { console.error("Sheet sync error:", e); }
+      }
       renderUI();
     }
 
@@ -213,8 +226,8 @@
       document.getElementById('gift-modal').classList.remove('open');
     }
 
-    // Case-insensitive chip gifting mechanism
-    function submitGiftChips() {
+    // Instant Case-Insensitive Google Sheet Chip Gifting
+    async function submitGiftChips() {
       const rawName = document.getElementById('gift-username').value.trim();
       const amount = parseInt(document.getElementById('gift-amount').value, 10);
 
@@ -234,17 +247,51 @@
       // Convert target username to uppercase for case-insensitive processing
       const targetUser = rawName.toUpperCase();
 
-      state.points -= amount;
-      state.stats.netProfit -= amount;
-      
-      const logMsg = `[GIFT] Sent ${amount} chips to @${targetUser}`;
-      state.history.unshift(logMsg);
-      if (state.history.length > 20) state.history.pop();
+      if (state.username !== 'GUEST' && targetUser === state.username) {
+        alert("You cannot gift chips to yourself!");
+        return;
+      }
 
-      saveState();
-      renderUI();
       closeGiftModal();
-      alert(`Successfully sent ${amount} chips to @${targetUser}!`);
+
+      // If logged in as GUEST, perform local-only fallback
+      if (!state.username || state.username === 'GUEST' || !GOOGLE_SCRIPT_URL) {
+        state.points -= amount;
+        state.stats.netProfit -= amount;
+        const logMsg = `[GIFT] Sent ${amount} chips to @${targetUser}`;
+        state.history.unshift(logMsg);
+        if (state.history.length > 20) state.history.pop();
+        saveState();
+        renderUI();
+        alert(`Successfully sent ${amount} chips to @${targetUser} (Guest mode)!`);
+        return;
+      }
+
+      // Instant Google Sheet API Request for Gifting
+      try {
+        const giftUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=gift&recipient=${encodeURIComponent(targetUser)}&amount=${amount}&format=json`;
+        const res = await fetch(giftUrl);
+        const data = await res.json();
+
+        if (data && data.success) {
+          // Update local state instantly with server response
+          state.points = data.senderNewPoints;
+          state.stats.netProfit -= amount;
+
+          const logMsg = `[GIFT] Sent ${amount} chips to @${targetUser}`;
+          state.history.unshift(logMsg);
+          if (state.history.length > 20) state.history.pop();
+
+          saveState();
+          renderUI();
+          alert(`Successfully gifted ${amount} chips to @${targetUser}! Updated instantly in Google Sheets.`);
+        } else {
+          alert("Failed to process gift: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        console.error("Gift transaction error:", err);
+        alert("Network error connecting to Google Sheets.");
+      }
     }
 
     function renderUI() {
