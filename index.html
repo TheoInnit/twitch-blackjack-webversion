@@ -605,27 +605,28 @@
       </div>
     </div>
 
-    <div class="hud-actions">
-      <button class="pixel-btn btn-amber" id="btn-daily" onclick="claimDaily()">
-        DAILY +500
-      </button>
-      <button class="pixel-btn btn-cyan" id="btn-fortune" onclick="claimFortune()">
-        FORTUNE (6H)
-      </button>
-      <button class="pixel-btn btn-twitch" id="btn-twitch-login" onclick="loginWithTwitch()">
-        <!-- Pixel Twitch Glitch Icon -->
-        <svg width="14" height="14" viewBox="0 0 12 12" fill="#ffffff">
-          <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
-        </svg>
-        <span id="twitch-btn-text">LOGIN TWITCH</span>
-      </button>
-      <button class="pixel-btn btn-red" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
-        LOGOUT
-      </button>
-      <button class="pixel-btn btn-slate" id="btn-sound" onclick="toggleSound()" title="Toggle 8-Bit Sound">
-        SFX:ON
-      </button>
-    </div>
+<div class="hud-actions">
+  <a href="wallet.html" class="pixel-btn btn-gold" style="text-decoration: none;">WALLET</a>
+  <button class="pixel-btn btn-amber" id="btn-daily" onclick="claimDaily()">
+    DAILY +500
+  </button>
+  <button class="pixel-btn btn-cyan" id="btn-fortune" onclick="claimFortune()">
+    FORTUNE (6H)
+  </button>
+  <button class="pixel-btn btn-twitch" id="btn-twitch-login" onclick="loginWithTwitch()">
+    <!-- Pixel Twitch Glitch Icon -->
+    <svg width="14" height="14" viewBox="0 0 12 12" fill="#ffffff">
+      <path d="M2 1h9v7l-2 2H6l-2 2v-2H2V1zm1 1v6h2v2l2-2h2l1-1V2H3zm3 2h1v3H6V4zm2 0h1v3H8V4z"/>
+    </svg>
+    <span id="twitch-btn-text">LOGIN TWITCH</span>
+  </button>
+  <button class="pixel-btn btn-red" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+    LOGOUT
+  </button>
+  <button class="pixel-btn btn-slate" id="btn-sound" onclick="toggleSound()" title="Toggle 8-Bit Sound">
+    SFX:ON
+  </button>
+</div>
   </header>
 
   <!-- ========================================================================
