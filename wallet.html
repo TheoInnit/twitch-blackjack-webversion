@@ -443,7 +443,7 @@
         historyBox.innerHTML = `<p style="color: #64748b;">No recent activity recorded in database yet.</p>`;
       } else {
         let filteredHistory = state.history.filter(item => {
-          if (currentFilter === 'bj') return item.includes('[CHAT BJ]');
+          if (currentFilter === 'bj') return item.includes('[CHAT BJ]') || item.includes('[BJ]');
           if (currentFilter === 'bank') return item.includes('[BANK]');
           if (currentFilter === 'gift') return item.includes('[GIFT]');
           return true; // 'all'
