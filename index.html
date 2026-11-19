@@ -19,36 +19,38 @@
        TOP HUD HEADER BAR
        ======================================================================== -->
   <header class="hud-header">
-    <div class="brand-title">
-      <!-- Pixel Spade Logo -->
-      <svg width="20" height="20" viewBox="0 0 11 11" fill="#facc15">
-        <path d="M5 1h1v1h1v1h1v1h1v1h1v2H9v1H7V7H6v2h2v1H3V9h2V7H4v1H2V7H1V5h1V4h1V3h1V2h1V1z"/>
-      </svg>
-      <span>TWITCH CHAT BLACKJACK</span>
-    </div>
-
-    <div class="hud-stats">
-      <div class="stat-pill">
-        <!-- Circular Pixel Poker Chip Icon -->
-        <svg width="14" height="14" viewBox="0 0 11 11">
-          <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
-          <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
-          <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
-          <rect x="5" y="8" width="1" height="2" fill="#09090b"/>
-          <rect x="1" y="5" width="2" height="1" fill="#09090b"/>
-          <rect x="8" y="5" width="2" height="1" fill="#09090b"/>
+    <div class="hud-top-row">
+      <div class="brand-title">
+        <!-- Pixel Spade Logo -->
+        <svg width="20" height="20" viewBox="0 0 11 11" fill="#facc15">
+          <path d="M5 1h1v1h1v1h1v1h1v1h1v2H9v1H7V7H6v2h2v1H3V9h2V7H4v1H2V7H1V5h1V4h1V3h1V2h1V1z"/>
         </svg>
-        <span>CHIPS:</span>
-        <span class="val" id="balance-display">1000</span>
+        <span>TWITCH CHAT BLACKJACK</span>
       </div>
-      <div class="user-badge-stack">
-        <div class="stat-pill" id="user-badge">
-          <span style="color:#c084fc;">@</span>
-          <span id="username-display">GUEST</span>
+
+      <div class="hud-stats">
+        <div class="stat-pill">
+          <!-- Circular Pixel Poker Chip Icon -->
+          <svg width="14" height="14" viewBox="0 0 11 11">
+            <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
+            <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
+            <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
+            <rect x="5" y="8" width="1" height="2" fill="#09090b"/>
+            <rect x="1" y="5" width="2" height="1" fill="#09090b"/>
+            <rect x="8" y="5" width="2" height="1" fill="#09090b"/>
+          </svg>
+          <span>CHIPS:</span>
+          <span class="val" id="balance-display">1000</span>
         </div>
-        <button class="pixel-btn btn-red btn-logout-under" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
-          LOGOUT
-        </button>
+        <div class="user-badge-stack">
+          <div class="stat-pill" id="user-badge">
+            <span style="color:#c084fc;">@</span>
+            <span id="username-display">GUEST</span>
+          </div>
+          <button class="pixel-btn btn-red btn-logout-under" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+            LOGOUT
+          </button>
+        </div>
       </div>
     </div>
 
@@ -72,7 +74,6 @@
       </button>
     </div>
   </header>
-
   <!-- ========================================================================
        MAIN CASINO TABLE
        ======================================================================== -->
