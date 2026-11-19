@@ -503,7 +503,7 @@
     }
 
     /* ==========================================================================
-       10. FOOTER & MODALS
+       10. FOOTER, MODALS & PIXEL HOTKEY TOOLTIP
        ========================================================================== */
     .page-footer {
       padding: 10px 0 20px;
@@ -584,6 +584,35 @@
       margin: 0;
     }
 
+    .hotkey-tooltip {
+      position: fixed;
+      z-index: 200;
+      pointer-events: none;
+      display: none;
+      background: #0f0d17;
+      color: #f8fafc;
+      border: 3px solid var(--gold);
+      box-shadow:
+        0 0 0 3px var(--pixel-border),
+        4px 4px 0 rgba(0, 0, 0, 0.75);
+      padding: 8px 10px;
+      font-size: 9px;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .hotkey-tooltip.visible {
+      display: block;
+    }
+
+    .hotkey-key {
+      color: var(--gold);
+      background: #1e1b2e;
+      border: 2px solid #475569;
+      padding: 2px 5px;
+      margin-left: 4px;
+    }
+
     @media (max-width: 640px) {
       .pixel-card {
         width: 68px;
@@ -644,6 +673,9 @@
 
     <div class="hud-actions">
       <a href="wallet.html" id="btn-wallet" class="pixel-btn btn-gold" style="text-decoration: none; display: none;">WALLET</a>
+      <button class="pixel-btn btn-blue" id="btn-sync" onclick="manualSyncWallet()" style="display: none;" title="Sync Chips & Stats">
+        SYNC
+      </button>
       <button class="pixel-btn btn-amber" id="btn-daily" onclick="claimDaily()">
         DAILY +500
       </button>
@@ -731,26 +763,26 @@
           <button class="pixel-chip chip-500" onclick="addBet(500)">+500</button>
         </div>
 
-        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 14px 32px;" id="btn-deal" onclick="startGame()">
+        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 14px 32px;" id="btn-deal" data-hotkey="SPACE" onclick="startGame()">
           DEAL HAND
         </button>
       </div>
 
       <!-- IN-GAME ACTION BUTTONS -->
       <div id="gameplay-controls" class="action-buttons-row" style="display: none;">
-        <button class="pixel-btn btn-green" id="btn-hit" onclick="playerHit()">
+        <button class="pixel-btn btn-green" id="btn-hit" data-hotkey="A" onclick="playerHit()">
           HIT
         </button>
-        <button class="pixel-btn btn-red" id="btn-stand" onclick="playerStand()">
+        <button class="pixel-btn btn-red" id="btn-stand" data-hotkey="S" onclick="playerStand()">
           STAND
         </button>
-        <button class="pixel-btn btn-blue" id="btn-split" onclick="playerSplit()" disabled>
+        <button class="pixel-btn btn-blue" id="btn-split" data-hotkey="D" onclick="playerSplit()" disabled>
           SPLIT
         </button>
-        <button class="pixel-btn btn-gold" id="btn-dd" onclick="playerDoubleDown()" disabled>
+        <button class="pixel-btn btn-gold" id="btn-dd" data-hotkey="F" onclick="playerDoubleDown()" disabled>
           DOUBLE (DD)
         </button>
-        <button class="pixel-btn btn-cyan" id="btn-insurance" onclick="playerInsurance()" disabled>
+        <button class="pixel-btn btn-cyan" id="btn-insurance" data-hotkey="G" onclick="playerInsurance()" disabled>
           INSURANCE
         </button>
       </div>
@@ -804,6 +836,13 @@
   </div>
 
   <!-- ========================================================================
+       3-SECOND HOVER HOTKEY CURSOR TOOLTIP
+       ======================================================================== -->
+  <div class="hotkey-tooltip" id="hotkey-tooltip" role="tooltip">
+    HOTKEY<span class="hotkey-key" id="hotkey-tooltip-key"></span>
+  </div>
+
+  <!-- ========================================================================
        GAME LOGIC, OAUTH & GOOGLE APPS SCRIPT SYNC ENGINE
        ======================================================================== -->
   <script>
@@ -812,6 +851,14 @@
 
     let soundEnabled = true;
     let audioCtx = null;
+
+    function getLocalDayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
 
     function initAudio() {
       if (!audioCtx) {
@@ -912,7 +959,7 @@
         if (token) {
           state.twitchToken = token;
           history.replaceState(null, '', window.location.pathname + window.location.search);
-          fetchTwitchUserFromToken(token);
+          await fetchTwitchUserFromToken(token);
           return;
         }
       }
@@ -921,7 +968,6 @@
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
         await syncWalletDataFromSheet(state.username);
         saveStateAndDatabase();
-        renderUI();
       }
     }
 
@@ -940,7 +986,8 @@
 
         // PUSH FULL STATS & HISTORY DIRECTLY TO GOOGLE SHEET DATABASE
         if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
-          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&points=${state.points}&totalHands=${state.stats.totalHands}&wins=${state.stats.wins}&netProfit=${state.stats.netProfit}&history=${encodeURIComponent(JSON.stringify(state.history))}&format=json`;
+          const localDay = encodeURIComponent(getLocalDayString());
+          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&points=${state.points}&totalHands=${state.stats.totalHands}&wins=${state.stats.wins}&netProfit=${state.stats.netProfit}&history=${encodeURIComponent(JSON.stringify(state.history))}&localDay=${localDay}&format=json`;
           fetch(syncUrl).catch(err => console.error("Database sync error:", err));
         }
       } catch (e) { console.error(e); }
@@ -976,7 +1023,7 @@
         const data = await res.json();
         if (data.data && data.data[0]) {
           state.username = data.data[0].display_name.toUpperCase();
-          
+
           // Fetch live wallet stats & history from Google Sheet
           await syncWalletDataFromSheet(state.username);
 
@@ -986,23 +1033,42 @@
         }
       } catch (err) {
         console.error('Twitch Helix fetch error:', err);
+        renderUI();
         setBanner("FAILED TO VERIFY TWITCH TOKEN. TRY LOGGING IN AGAIN.", "lose");
       }
     }
 
     async function syncWalletDataFromSheet(username) {
-      if (!GOOGLE_SCRIPT_URL) return;
+      if (!GOOGLE_SCRIPT_URL) return false;
       try {
-        const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(username)}&action=walletdata&format=json`;
+        const localDay = encodeURIComponent(getLocalDayString());
+        const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(username)}&action=walletdata&localDay=${localDay}&format=json`;
         const res = await fetch(url);
         const data = await res.json();
         if (data && data.success) {
           state.points = data.points;
           state.stats = data.stats;
           state.history = data.history || [];
+          return true;
         }
       } catch (e) {
         console.error("Could not sync wallet data from Google Sheet:", e);
+      }
+      return false;
+    }
+
+    async function manualSyncWallet() {
+      if (state.game || state.username === 'GUEST') return;
+      sfx.click();
+      setBanner("SYNCING WALLET WITH SHEET...", "");
+      const ok = await syncWalletDataFromSheet(state.username);
+      if (ok) {
+        if (state.currentBet > state.points) state.currentBet = state.points;
+        saveStateAndDatabase();
+        renderUI();
+        setBanner(`WALLET SYNCED! BALANCE: ${state.points} CHIPS.`, "win");
+      } else {
+        setBanner("SYNC FAILED. TRY AGAIN IN A MOMENT.", "lose");
       }
     }
 
@@ -1112,6 +1178,7 @@
         return;
       }
 
+      hideHotkeyTooltip();
       sfx.card();
       state.points -= bet;
 
@@ -1174,7 +1241,8 @@
     }
 
     function playerHit() {
-      if (!state.game) return;
+      if (!state.game || state.game.revealed) return;
+      hideHotkeyTooltip();
       sfx.card();
       const g = state.game;
       const idx = g.activeHandIndex;
@@ -1206,13 +1274,14 @@
     }
 
     function playerStand() {
-      if (!state.game) return;
+      if (!state.game || state.game.revealed) return;
+      hideHotkeyTooltip();
       sfx.click();
       advanceOrResolveHand();
     }
 
     function playerSplit() {
-      if (!state.game) return;
+      if (!state.game || state.game.revealed) return;
       const g = state.game;
       if (g.isSplit) return;
 
@@ -1226,6 +1295,7 @@
         return;
       }
 
+      hideHotkeyTooltip();
       sfx.card();
       state.points -= bet;
 
@@ -1243,11 +1313,12 @@
     }
 
     function playerDoubleDown() {
-      if (!state.game) return;
+      if (!state.game || state.game.revealed) return;
       const g = state.game;
       const idx = g.activeHandIndex;
       const hand = g.hands[idx];
-      if (hand.length !== 2) return;
+      const scoreBefore = calcScore(hand);
+      if (hand.length !== 2 || ![9, 10, 11].includes(scoreBefore)) return;
 
       const bet = g.bets[idx];
       if (bet > state.points) {
@@ -1256,6 +1327,7 @@
         return;
       }
 
+      hideHotkeyTooltip();
       sfx.chip();
       state.points -= bet;
       g.bets[idx] *= 2;
@@ -1280,7 +1352,7 @@
     }
 
     function playerInsurance() {
-      if (!state.game) return;
+      if (!state.game || state.game.revealed) return;
       const g = state.game;
       if (g.dealer[0].v !== "A" || g.hasInsurance) return;
 
@@ -1291,6 +1363,7 @@
         return;
       }
 
+      hideHotkeyTooltip();
       sfx.chip();
       state.points -= cost;
       g.hasInsurance = true;
@@ -1483,6 +1556,7 @@
     function updateControlsVisibility(isPlaying) {
       document.getElementById('betting-controls').style.display = isPlaying ? 'none' : 'flex';
       document.getElementById('gameplay-controls').style.display = isPlaying ? 'flex' : 'none';
+      if (isPlaying) hideHotkeyTooltip();
     }
 
     function renderUI() {
@@ -1493,13 +1567,14 @@
       if (customInput && document.activeElement !== customInput) {
         customInput.value = state.currentBet > 0 ? state.currentBet : '';
       }
-      
+
       const isGuest = (state.username === 'GUEST');
       document.getElementById('twitch-btn-text').textContent = isGuest ? 'LOGIN TWITCH' : `@${state.username}`;
       document.getElementById('btn-twitch-logout').style.display = isGuest ? 'none' : 'inline-flex';
-      
-      // Toggle Wallet button visibility based on login status
+
+      // Toggle Wallet & Sync button visibility based on login status
       document.getElementById('btn-wallet').style.display = isGuest ? 'none' : 'inline-flex';
+      document.getElementById('btn-sync').style.display = isGuest ? 'none' : 'inline-flex';
 
       const dealerCardsEl = document.getElementById('dealer-cards');
       const dealerScoreEl = document.getElementById('dealer-score');
@@ -1599,8 +1674,113 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadState();
+    // ========================================================================
+    // 3-SECOND CURSOR TOOLTIP & MAIN BUTTON HOTKEYS
+    // ========================================================================
+    let hoverTimer = null;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    function positionHotkeyTooltip(x, y) {
+      const tip = document.getElementById('hotkey-tooltip');
+      if (!tip || !tip.classList.contains('visible')) return;
+      const offset = 14;
+      const rect = tip.getBoundingClientRect();
+      let left = x + offset;
+      let top = y + offset;
+      if (left + rect.width > window.innerWidth - 8) {
+        left = Math.max(8, x - rect.width - offset);
+      }
+      if (top + rect.height > window.innerHeight - 8) {
+        top = Math.max(8, y - rect.height - offset);
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+    }
+
+    function hideHotkeyTooltip() {
+      if (hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+      const tip = document.getElementById('hotkey-tooltip');
+      if (tip) tip.classList.remove('visible');
+    }
+
+    function setupMainButtonHoverTooltips() {
+      const mainButtons = document.querySelectorAll('[data-hotkey]');
+      mainButtons.forEach(btn => {
+        btn.addEventListener('mouseenter', (e) => {
+          hideHotkeyTooltip();
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          const keyLabel = btn.getAttribute('data-hotkey');
+          hoverTimer = setTimeout(() => {
+            if (!btn.matches(':hover') || btn.disabled) return;
+            const tip = document.getElementById('hotkey-tooltip');
+            const keyEl = document.getElementById('hotkey-tooltip-key');
+            if (!tip || !keyEl) return;
+            keyEl.textContent = keyLabel;
+            tip.classList.add('visible');
+            positionHotkeyTooltip(lastMouseX, lastMouseY);
+          }, 3000);
+        });
+
+        btn.addEventListener('mousemove', (e) => {
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          positionHotkeyTooltip(lastMouseX, lastMouseY);
+        });
+
+        btn.addEventListener('mouseleave', hideHotkeyTooltip);
+        btn.addEventListener('mousedown', hideHotkeyTooltip);
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        return;
+      }
+      const modalOpen = document.getElementById('fortune-modal').classList.contains('open');
+      if (modalOpen) return;
+
+      const code = e.code;
+      const key = (e.key || '').toLowerCase();
+
+      if (code === 'Space') {
+        const dealBtn = document.getElementById('btn-deal');
+        if (!state.game && dealBtn && !dealBtn.disabled && dealBtn.offsetParent !== null) {
+          e.preventDefault();
+          dealBtn.click();
+        }
+        return;
+      }
+
+      if (!state.game || state.game.revealed) return;
+
+      if (key === 'a') {
+        const hitBtn = document.getElementById('btn-hit');
+        if (hitBtn && !hitBtn.disabled) hitBtn.click();
+      } else if (key === 's') {
+        const standBtn = document.getElementById('btn-stand');
+        if (standBtn && !standBtn.disabled) standBtn.click();
+      } else if (key === 'd') {
+        const splitBtn = document.getElementById('btn-split');
+        if (splitBtn && !splitBtn.disabled) splitBtn.click();
+      } else if (key === 'f') {
+        const ddBtn = document.getElementById('btn-dd');
+        if (ddBtn && !ddBtn.disabled) ddBtn.click();
+      } else if (key === 'g') {
+        const insBtn = document.getElementById('btn-insurance');
+        if (insBtn && !insBtn.disabled) insBtn.click();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      setupMainButtonHoverTooltips();
+      await loadState();
       renderUI();
     });
   </script>
