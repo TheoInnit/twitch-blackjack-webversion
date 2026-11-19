@@ -29,12 +29,8 @@
       </div>
 
       <div class="hud-stats">
-        <div class="user-session-pair single-slot" id="user-session-pair">
-          <div class="stat-pill" id="user-badge">
-            <span style="color:#c084fc;">@</span>
-            <span id="username-display">GUEST</span>
-          </div>
-          <button class="pixel-btn btn-red btn-logout-beside" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+        <div class="user-session-slot" id="user-session-slot" style="display: none;">
+          <button class="pixel-btn btn-red btn-logout-top" id="btn-twitch-logout" onclick="logoutTwitch()" title="Logout">
             LOGOUT
           </button>
         </div>
@@ -69,6 +65,12 @@
     <div class="wood-frame">
       <div class="felt-surface">
 
+        <!-- UPPER-LEFT NAME BADGE INSIDE PLAY TABLE -->
+        <div class="stat-pill felt-corner-badge felt-name-badge" id="user-badge">
+          <span style="color:#c084fc;">@</span>
+          <span id="username-display">GUEST</span>
+        </div>
+
         <!-- DEALER ZONE -->
         <section class="zone-container">
           <div class="zone-header">
@@ -97,8 +99,8 @@
           </div>
         </section>
 
-        <!-- LOWER-LEFT CHIPS DISPLAY INSIDE PLAY TABLE -->
-        <div class="stat-pill felt-chips-badge" id="chips-pill">
+        <!-- LOWER-LEFT CHIPS DISPLAY DIRECTLY BELOW NAME BADGE -->
+        <div class="stat-pill felt-corner-badge felt-chips-badge" id="chips-pill">
           <!-- Circular Pixel Poker Chip Icon -->
           <svg width="13" height="13" viewBox="0 0 11 11">
             <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
@@ -124,14 +126,16 @@
 
       <!-- BETTING CONTROLS -->
       <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;">
-          <span style="font-size: 11px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+          <span style="font-size: 10px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
           <div class="custom-bet-group">
             <input type="number" id="custom-bet-input" class="bet-input" min="1" placeholder="BET..." onkeydown="if(event.key==='Enter') applyCustomBet()" />
-            <button class="pixel-btn btn-gold" style="font-size: 9px; padding: 8px 10px;" onclick="applyCustomBet()">SET</button>
+            <button class="pixel-btn btn-gold" style="font-size: 9px; padding: 7px 9px;" onclick="applyCustomBet()">SET</button>
           </div>
-          <button class="pixel-btn btn-slate" style="font-size: 9px; padding: 8px 10px;" onclick="clearBet()">CLEAR</button>
-          <button class="pixel-btn btn-slate" style="font-size: 9px; padding: 8px 10px;" onclick="maxBet()">MAX</button>
+          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="minBet()">MIN</button>
+          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="halfBet()">1/2</button>
+          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="maxBet()">MAX</button>
+          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="clearBet()">CLEAR</button>
         </div>
 
         <div class="chip-row">
@@ -142,7 +146,7 @@
           <button class="pixel-chip chip-500" onclick="addBet(500)">+500</button>
         </div>
 
-        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 12px 32px;" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
+        <button class="pixel-btn btn-green btn-deal-wide" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
           DEAL HAND
         </button>
       </div>
@@ -813,6 +817,32 @@
       renderUI();
     }
 
+    function minBet() {
+      if (state.game || isBusyAnimating) return;
+      if (state.points <= 0) {
+        setBanner("YOU HAVE 0 CHIPS! CLAIM DAILY OR FORTUNE FIRST.", "lose");
+        sfx.bust();
+        return;
+      }
+      sfx.chip();
+      state.currentBet = 1;
+      saveStateAndDatabase();
+      renderUI();
+    }
+
+    function halfBet() {
+      if (state.game || isBusyAnimating) return;
+      if (state.points <= 0) {
+        setBanner("YOU HAVE 0 CHIPS! CLAIM DAILY OR FORTUNE FIRST.", "lose");
+        sfx.bust();
+        return;
+      }
+      sfx.chip();
+      state.currentBet = Math.max(1, Math.floor(state.points / 2));
+      saveStateAndDatabase();
+      renderUI();
+    }
+
     function clearBet() {
       if (state.game || isBusyAnimating) return;
       sfx.click();
@@ -1354,9 +1384,9 @@
       }
 
       const isGuest = (state.username === 'GUEST');
-      const sessionPair = document.getElementById('user-session-pair');
-      if (sessionPair) {
-        sessionPair.classList.toggle('single-slot', isGuest);
+      const sessionSlot = document.getElementById('user-session-slot');
+      if (sessionSlot) {
+        sessionSlot.style.display = isGuest ? 'none' : 'inline-flex';
       }
       document.getElementById('btn-twitch-login').style.display = isGuest ? 'inline-flex' : 'none';
       document.getElementById('btn-twitch-logout').style.display = isGuest ? 'none' : 'inline-flex';
