@@ -42,7 +42,7 @@
       box-shadow: inset -4px -4px 0px rgba(0, 0, 0, 0.4), inset 4px 4px 0px rgba(255, 255, 255, 0.25), 0 4px 0 var(--pixel-border);
       display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 9px;
     }
-    .pixel-btn:active { transform: translateY(4px); box-shadow: inset -2px -2px 0 rgba(0,0,0,0.4), 0 0px 0 var(--pixel-border); }
+    .pixel-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: inset -2px -2px 0 rgba(0,0,0,0.4), 0 0px 0 var(--pixel-border); }
     .pixel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-gold { background: var(--gold); color: #18181b; }
@@ -135,6 +135,36 @@
       background: #09090b; color: var(--gold); border: 4px solid #475569; outline: none; text-transform: uppercase;
     }
     .modal-input:focus { border-color: var(--gold); }
+
+    /* Shop & Scratch Card Animations */
+    .shop-list {
+      display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto;
+    }
+    .shop-item {
+      background: #0f0d17; border: 3px solid var(--pixel-border); padding: 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .shop-item.placeholder {
+      background: #09090b; border: 2px dashed #475569; opacity: 0.6;
+    }
+
+    @keyframes cardShake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-4px, 2px); }
+      50% { transform: translate(4px, -2px); }
+      75% { transform: translate(-3px, -2px); }
+    }
+    .shake-win { animation: cardShake 0.32s steps(2) 2; }
+
+    @keyframes sparkBurst {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+    }
+    .pixel-spark {
+      position: absolute; width: 8px; height: 8px; pointer-events: none;
+      border: 2px solid #09090b; background: var(--gold);
+      animation: sparkBurst 0.45s steps(5) forwards;
+    }
   </style>
 </head>
 <body>
@@ -150,13 +180,16 @@
 
   <main class="main-container">
 
-    <!-- BALANCE & GIFT BUTTON -->
-    <div class="pixel-box" style="padding: 16px; background: var(--panel-bg); display: flex; justify-content: space-between; align-items: center;">
+    <!-- BALANCE, SHOP & GIFT BUTTONS -->
+    <div class="pixel-box" style="padding: 16px; background: var(--panel-bg); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
       <div>
         <div style="font-size: 9px; color: #94a3b8;">WALLET BALANCE</div>
         <div style="font-size: 16px; color: #4ade80; margin-top: 4px;"><span id="wallet-balance">1000</span> CHIPS</div>
       </div>
-      <button class="pixel-btn btn-twitch" onclick="openGiftModal()">GIFT CHIPS</button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="pixel-btn btn-gold" onclick="openShopModal()">SHOP</button>
+        <button class="pixel-btn btn-twitch" onclick="openGiftModal()">GIFT CHIPS</button>
+      </div>
     </div>
 
     <!-- SAVINGS BANK VAULT -->
@@ -193,6 +226,7 @@
         <button class="filter-tab" onclick="setFilter('bj', this)">GAMES</button>
         <button class="filter-tab" onclick="setFilter('bank', this)">BANK</button>
         <button class="filter-tab" onclick="setFilter('gift', this)">GIFTS</button>
+        <button class="filter-tab" onclick="setFilter('scratch', this)">SCRATCH</button>
       </div>
       <div class="history-box" id="history-box">
         <p style="color: #64748b;">Loading activity from Google Sheets database...</p>
@@ -200,6 +234,90 @@
     </div>
 
   </main>
+
+  <!-- SHOP MODAL WINDOW -->
+  <div class="modal-backdrop" id="shop-modal">
+    <div class="modal-card pixel-box" style="max-width: 450px;">
+      <div class="modal-title">
+        <span>CHIP SHOP</span>
+        <button class="pixel-btn btn-red" style="padding: 4px 8px; font-size: 8px;" onclick="closeShopModal()">X</button>
+      </div>
+
+      <div id="shop-reset-info" style="font-size: 7px; color: #94a3b8; line-height: 1.5;">
+        RESETS AT YOUR LOCAL 12:00 AM (<span id="shop-local-day"></span>)
+      </div>
+
+      <div class="shop-list">
+        <!-- Tier 1: 25 Chips (Limit 30/day) -->
+        <div class="shop-item">
+          <div>
+            <div style="font-size: 9px; color: #f59e0b;">BRONZE SCRATCH CARD</div>
+            <div style="font-size: 7px; color: #94a3b8; margin-top: 4px;">COST: 25c • JP: 2,500c (0.2%)</div>
+            <div style="font-size: 7px; color: #4ade80; margin-top: 4px;">LEFT TODAY: <span id="rem-bronze">30</span>/30</div>
+          </div>
+          <button class="pixel-btn btn-green" id="btn-buy-bronze" style="font-size: 8px; padding: 8px;" onclick="buyScratchTicket('bronze', 25)">BUY</button>
+        </div>
+
+        <!-- Tier 2: 50 Chips (Limit 20/day) -->
+        <div class="shop-item">
+          <div>
+            <div style="font-size: 9px; color: #38bdf8;">SILVER SCRATCH CARD</div>
+            <div style="font-size: 7px; color: #94a3b8; margin-top: 4px;">COST: 50c • JP: 7,500c (0.2%)</div>
+            <div style="font-size: 7px; color: #4ade80; margin-top: 4px;">LEFT TODAY: <span id="rem-silver">20</span>/20</div>
+          </div>
+          <button class="pixel-btn btn-green" id="btn-buy-silver" style="font-size: 8px; padding: 8px;" onclick="buyScratchTicket('silver', 50)">BUY</button>
+        </div>
+
+        <!-- Tier 3: 100 Chips (Limit 10/day) -->
+        <div class="shop-item">
+          <div>
+            <div style="font-size: 9px; color: #facc15;">GOLD VIP SCRATCH CARD</div>
+            <div style="font-size: 7px; color: #94a3b8; margin-top: 4px;">COST: 100c • JP: 25,000c (0.2%)</div>
+            <div style="font-size: 7px; color: #4ade80; margin-top: 4px;">LEFT TODAY: <span id="rem-gold">10</span>/10</div>
+          </div>
+          <button class="pixel-btn btn-green" id="btn-buy-gold" style="font-size: 8px; padding: 8px;" onclick="buyScratchTicket('gold', 100)">BUY</button>
+        </div>
+
+        <!-- Future Item Placeholders -->
+        <div class="shop-item placeholder">
+          <div>
+            <div style="font-size: 8px; color: #94a3b8;">??? PIXEL CARD BACK</div>
+            <div style="font-size: 7px; color: #64748b; margin-top: 4px;">FUTURE ITEM SLOT</div>
+          </div>
+          <button class="pixel-btn btn-slate" style="font-size: 7px; padding: 6px;" disabled>SOON</button>
+        </div>
+
+        <div class="shop-item placeholder">
+          <div>
+            <div style="font-size: 8px; color: #94a3b8;">??? TABLE FELT SKIN</div>
+            <div style="font-size: 7px; color: #64748b; margin-top: 4px;">FUTURE ITEM SLOT</div>
+          </div>
+          <button class="pixel-btn btn-slate" style="font-size: 7px; padding: 6px;" disabled>SOON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRATCH-OFF CANVAS MODAL WINDOW -->
+  <div class="modal-backdrop" id="scratch-modal">
+    <div class="modal-card pixel-box" id="scratch-card-box" style="max-width: 360px; align-items: center;">
+      <div class="modal-title" style="width: 100%;">
+        <span id="scratch-title">SCRATCH CARD</span>
+        <button class="pixel-btn btn-red" style="padding: 4px 8px; font-size: 8px;" onclick="closeScratchModal()">X</button>
+      </div>
+
+      <div id="scratch-stage" style="position: relative; width: 260px; height: 150px; border: 4px solid var(--pixel-border); background: #0f0d17; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;">
+        <div id="scratch-prize-label" style="font-size: 14px; color: #4ade80; text-align: center; padding: 8px;"></div>
+        <div id="scratch-sub-label" style="font-size: 8px; color: var(--gold); margin-top: 6px; text-align: center;"></div>
+        <canvas id="scratch-canvas" width="260" height="150" style="position: absolute; top: 0; left: 0; cursor: grab; touch-action: none;"></canvas>
+      </div>
+
+      <div id="scratch-status" style="font-size: 8px; color: #94a3b8; text-align: center;">DRAG OR CLICK TO RUB OFF FOIL</div>
+      <button class="pixel-btn btn-gold" id="scratch-again-btn" style="font-size: 8px; display: none;" onclick="closeScratchModal(); openShopModal();">
+        BACK TO SHOP
+      </button>
+    </div>
+  </div>
 
   <!-- GIFT CHIPS MODAL WINDOW -->
   <div class="modal-backdrop" id="gift-modal">
@@ -254,6 +372,185 @@
     let currentBankMode = 'deposit';
     let currentFilter = 'all';
 
+    // --- Player Local Midnight Date Helper (YYYY-MM-DD in player's own timezone) ---
+    function getPlayerLocalDay() {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+        return new Intl.DateTimeFormat('en-CA', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          timeZone: tz
+        }).format(new Date());
+      } catch (_) {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    function getPlayerTimeZoneLabel() {
+      try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'LOCAL';
+      } catch (_) {
+        return 'LOCAL';
+      }
+    }
+
+    const SHOP_LIMITS = { bronze: 30, silver: 20, gold: 10 };
+
+    let shopData = {
+      day: getPlayerLocalDay(),
+      bronze: 0,
+      silver: 0,
+      gold: 0
+    };
+
+    function getShopStorageKey() {
+      const u = (state.username || 'GUEST').toUpperCase();
+      return `pixel_shop_limits_${u}`;
+    }
+
+    function ensureCurrentPlayerDay() {
+      const today = getPlayerLocalDay();
+      if (shopData.day !== today) {
+        shopData = { day: today, bronze: 0, silver: 0, gold: 0 };
+      }
+    }
+
+    function loadLocalShopData() {
+      const today = getPlayerLocalDay();
+      try {
+        const raw = localStorage.getItem(getShopStorageKey());
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.day === today) {
+            shopData = {
+              day: today,
+              bronze: Math.min(SHOP_LIMITS.bronze, Math.max(0, parseInt(parsed.bronze, 10) || 0)),
+              silver: Math.min(SHOP_LIMITS.silver, Math.max(0, parseInt(parsed.silver, 10) || 0)),
+              gold: Math.min(SHOP_LIMITS.gold, Math.max(0, parseInt(parsed.gold, 10) || 0))
+            };
+            return;
+          }
+        }
+      } catch (e) { console.error(e); }
+      shopData = { day: today, bronze: 0, silver: 0, gold: 0 };
+    }
+
+    function saveLocalShopData() {
+      ensureCurrentPlayerDay();
+      try {
+        localStorage.setItem(getShopStorageKey(), JSON.stringify(shopData));
+      } catch (e) { console.error(e); }
+    }
+
+    function renderShopLimits() {
+      ensureCurrentPlayerDay();
+      const remBronze = Math.max(0, SHOP_LIMITS.bronze - shopData.bronze);
+      const remSilver = Math.max(0, SHOP_LIMITS.silver - shopData.silver);
+      const remGold = Math.max(0, SHOP_LIMITS.gold - shopData.gold);
+
+      document.getElementById('shop-local-day').textContent = `${shopData.day} (${getPlayerTimeZoneLabel()})`;
+      document.getElementById('rem-bronze').textContent = remBronze;
+      document.getElementById('rem-silver').textContent = remSilver;
+      document.getElementById('rem-gold').textContent = remGold;
+
+      document.getElementById('btn-buy-bronze').disabled = remBronze <= 0;
+      document.getElementById('btn-buy-silver').disabled = remSilver <= 0;
+      document.getElementById('btn-buy-gold').disabled = remGold <= 0;
+    }
+
+    // --- 8-Bit Sound Effects (Web Audio API) ---
+    let audioCtx = null;
+    function playTone(freq, duration = 0.08, type = 'square', volume = 0.06) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (_) {}
+    }
+
+    let lastScratchTick = 0;
+    function playScratchSound() {
+      const now = Date.now();
+      if (now - lastScratchTick < 60) return;
+      lastScratchTick = now;
+      playTone(170 + Math.random() * 150, 0.04, 'sawtooth', 0.03);
+    }
+
+    function playWinSound() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 0.14, 'square', 0.07), idx * 80);
+      });
+    }
+
+    function playJackpotSound() {
+      [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 0.18, 'square', 0.09), idx * 75);
+      });
+    }
+
+    function playLossSound() {
+      [261.63, 196.0, 146.83].forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 0.14, 'sawtooth', 0.05), idx * 100);
+      });
+    }
+
+    // --- Scratch Ticket Tiers (Pure RNG, No Pity, 0.2% Jackpot Chance) ---
+    const SCRATCH_TIERS = {
+      bronze: {
+        label: 'BRONZE',
+        foil: '#b45309',
+        sheen: '#f59e0b',
+        jackpotAmount: 2500,
+        jackpotChance: 0.002,
+        rolls: [
+          { weight: 55, mult: 0 },
+          { weight: 30, mult: 1 },
+          { weight: 15, mult: 2.5 }
+        ]
+      },
+      silver: {
+        label: 'SILVER',
+        foil: '#64748b',
+        sheen: '#e2e8f0',
+        jackpotAmount: 7500,
+        jackpotChance: 0.002,
+        rolls: [
+          { weight: 50, mult: 0 },
+          { weight: 30, mult: 1.5 },
+          { weight: 20, mult: 3 }
+        ]
+      },
+      gold: {
+        label: 'GOLD VIP',
+        foil: '#ca8a04',
+        sheen: '#fef08a',
+        jackpotAmount: 25000,
+        jackpotChance: 0.002,
+        rolls: [
+          { weight: 45, mult: 0 },
+          { weight: 30, mult: 2 },
+          { weight: 25, mult: 5 }
+        ]
+      }
+    };
+
+    let activeScratch = null;
+    let isScratching = false;
+    let scratchSettled = false;
+
     async function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -263,11 +560,13 @@
         }
       } catch (e) { console.error(e); }
 
+      loadLocalShopData();
       document.getElementById('wallet-username').textContent = state.username;
 
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
         try {
-          const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=walletdata&format=json`;
+          const localDay = getPlayerLocalDay();
+          const url = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=walletdata&localDay=${encodeURIComponent(localDay)}&format=json`;
           const res = await fetch(url);
           const data = await res.json();
           if (data && data.success) {
@@ -275,6 +574,16 @@
             state.savings = data.savings || 0;
             state.stats = data.stats;
             state.history = data.history || [];
+
+            if (data.shop && data.shop.day === localDay) {
+              shopData = {
+                day: localDay,
+                bronze: Math.min(SHOP_LIMITS.bronze, Math.max(0, parseInt(data.shop.bronze, 10) || 0)),
+                silver: Math.min(SHOP_LIMITS.silver, Math.max(0, parseInt(data.shop.silver, 10) || 0)),
+                gold: Math.min(SHOP_LIMITS.gold, Math.max(0, parseInt(data.shop.gold, 10) || 0))
+              };
+              saveLocalShopData();
+            }
           }
         } catch (e) { console.error("Database sync error:", e); }
       }
@@ -286,6 +595,218 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) { console.error(e); }
     }
+
+    function openShopModal() {
+      ensureCurrentPlayerDay();
+      renderShopLimits();
+      playTone(440, 0.06, 'square', 0.04);
+      document.getElementById('shop-modal').classList.add('open');
+    }
+
+    function closeShopModal() {
+      document.getElementById('shop-modal').classList.remove('open');
+    }
+
+    function closeScratchModal() {
+      isScratching = false;
+      document.getElementById('scratch-modal').classList.remove('open');
+      document.getElementById('scratch-card-box').classList.remove('shake-win');
+    }
+
+    function rollScratchOutcome(tierKey, cost) {
+      const cfg = SCRATCH_TIERS[tierKey];
+      // Pure independent RNG roll for Jackpot (0.2% = 1 in 500), no pity
+      if (Math.random() < cfg.jackpotChance) {
+        return { prize: cfg.jackpotAmount, isJackpot: true };
+      }
+
+      const pool = cfg.rolls;
+      const total = pool.reduce((sum, item) => sum + item.weight, 0);
+      let roll = Math.random() * total;
+      for (const item of pool) {
+        roll -= item.weight;
+        if (roll <= 0) return { prize: Math.round(cost * item.mult), isJackpot: false };
+      }
+      return { prize: 0, isJackpot: false };
+    }
+
+    function spawnSparks(x, y, color = '#facc15') {
+      const stage = document.getElementById('scratch-stage');
+      for (let i = 0; i < 6; i++) {
+        const spark = document.createElement('div');
+        spark.className = 'pixel-spark';
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        spark.style.background = color;
+        const angle = (Math.PI * 2 * i) / 6 + (Math.random() - 0.5) * 0.4;
+        const dist = 22 + Math.random() * 24;
+        spark.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        spark.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+        stage.appendChild(spark);
+        setTimeout(() => spark.remove(), 460);
+      }
+    }
+
+    async function buyScratchTicket(tierKey, cost) {
+      ensureCurrentPlayerDay();
+      const limit = SHOP_LIMITS[tierKey];
+      const used = shopData[tierKey] || 0;
+
+      if (used >= limit) {
+        playTone(140, 0.16, 'sawtooth', 0.05);
+        alert(`You have reached your daily limit of ${limit} ${SCRATCH_TIERS[tierKey].label} tickets for today! Resets at your local 12:00 AM.`);
+        renderShopLimits();
+        return;
+      }
+
+      if (state.points < cost) {
+        playTone(140, 0.16, 'sawtooth', 0.05);
+        alert("Not enough chips in your wallet for that ticket!");
+        return;
+      }
+
+      shopData[tierKey] = used + 1;
+      saveLocalShopData();
+
+      state.points -= cost;
+      state.stats.netProfit -= cost;
+
+      const outcome = rollScratchOutcome(tierKey, cost);
+      activeScratch = { tierKey, cost, prize: outcome.prize, isJackpot: outcome.isJackpot };
+      scratchSettled = false;
+
+      saveState();
+      renderUI();
+      closeShopModal();
+      setupScratchCanvas(tierKey, outcome.prize, outcome.isJackpot);
+      playTone(587.33, 0.08, 'square', 0.05);
+      document.getElementById('scratch-modal').classList.add('open');
+
+      if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+        try {
+          const preSyncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&isScratch=1&points=${encodeURIComponent(state.points)}&netProfit=${encodeURIComponent(state.stats.netProfit)}&history=${encodeURIComponent(JSON.stringify(state.history))}&shop=${encodeURIComponent(JSON.stringify(shopData))}&localDay=${encodeURIComponent(shopData.day)}&format=json`;
+          await fetch(preSyncUrl);
+        } catch (err) {
+          console.error("Shop purchase sync error:", err);
+        }
+      }
+    }
+
+    function setupScratchCanvas(tierKey, prize, isJackpot) {
+      const cfg = SCRATCH_TIERS[tierKey];
+      const canvas = document.getElementById('scratch-canvas');
+      const ctx = canvas.getContext('2d');
+
+      document.getElementById('scratch-title').textContent = `${cfg.label} SCRATCH`;
+      document.getElementById('scratch-prize-label').textContent = prize > 0 ? `+${prize} CHIPS` : 'NO PRIZE';
+      document.getElementById('scratch-prize-label').style.color = isJackpot ? '#facc15' : (prize > 0 ? '#4ade80' : '#f87171');
+      document.getElementById('scratch-sub-label').textContent = isJackpot ? '★ MEGA JACKPOT ★' : (prize > 0 ? 'LUCKY MATCH!' : 'EMPTY FOIL');
+      document.getElementById('scratch-status').textContent = 'DRAG OR CLICK TO RUB OFF FOIL';
+      document.getElementById('scratch-again-btn').style.display = 'none';
+      document.getElementById('scratch-card-box').classList.remove('shake-win');
+
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = cfg.foil;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = cfg.sheen;
+      for (let x = -40; x < canvas.width + 40; x += 44) {
+        ctx.fillRect(x, 0, 12, canvas.height);
+      }
+
+      ctx.fillStyle = '#09090b';
+      ctx.font = '10px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCRATCH HERE', canvas.width / 2, canvas.height / 2 + 4);
+    }
+
+    function scratchCanvasAt(clientX, clientY) {
+      if (!activeScratch || scratchSettled) return;
+      const canvas = document.getElementById('scratch-canvas');
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (clientX - rect.left) * scaleX;
+      const y = (clientY - rect.top) * scaleY;
+
+      const ctx = canvas.getContext('2d');
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      playScratchSound();
+      spawnSparks(clientX - rect.left, clientY - rect.top, SCRATCH_TIERS[activeScratch.tierKey].sheen);
+      checkScratchCompletion(canvas, ctx);
+    }
+
+    async function checkScratchCompletion(canvas, ctx) {
+      if (scratchSettled) return;
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let cleared = 0;
+      const totalPixels = data.length / 4;
+
+      for (let i = 3; i < data.length; i += 4) {
+        if (data[i] === 0) cleared++;
+      }
+
+      if (cleared / totalPixels > 0.58) {
+        scratchSettled = true;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const { tierKey, cost, prize, isJackpot } = activeScratch;
+        const tierLabel = SCRATCH_TIERS[tierKey].label;
+        let logMsg = '';
+
+        if (prize > 0) {
+          state.points += prize;
+          state.stats.netProfit += prize;
+          if (isJackpot) {
+            playJackpotSound();
+            document.getElementById('scratch-card-box').classList.add('shake-win');
+            document.getElementById('scratch-status').textContent = `JACKPOT +${prize} CHIPS!`;
+            logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> JACKPOT WIN +${prize} chips`;
+          } else {
+            playWinSound();
+            document.getElementById('scratch-card-box').classList.add('shake-win');
+            document.getElementById('scratch-status').textContent = `WON +${prize} CHIPS!`;
+            logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> WIN +${prize} chips`;
+          }
+        } else {
+          playLossSound();
+          document.getElementById('scratch-status').textContent = `NO WIN (-${cost} CHIPS)`;
+          logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> LOST -${cost} chips`;
+        }
+
+        state.history.unshift(logMsg);
+        if (state.history.length > 20) state.history.pop();
+
+        document.getElementById('scratch-again-btn').style.display = 'inline-flex';
+        saveState();
+        renderUI();
+
+        if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+          try {
+            const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&isScratch=1&points=${encodeURIComponent(state.points)}&netProfit=${encodeURIComponent(state.stats.netProfit)}&history=${encodeURIComponent(JSON.stringify(state.history))}&shop=${encodeURIComponent(JSON.stringify(shopData))}&localDay=${encodeURIComponent(shopData.day)}&format=json`;
+            await fetch(syncUrl);
+          } catch (err) {
+            console.error("Scratch sync error:", err);
+          }
+        }
+      }
+    }
+
+    const scratchCanvas = document.getElementById('scratch-canvas');
+    scratchCanvas.addEventListener('pointerdown', (e) => {
+      isScratching = true;
+      scratchCanvasAt(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup', () => {
+      isScratching = false;
+    });
+    scratchCanvas.addEventListener('pointermove', (e) => {
+      if (isScratching) scratchCanvasAt(e.clientX, e.clientY);
+    });
 
     function openGiftModal() {
       document.getElementById('gift-username').value = '';
@@ -340,9 +861,9 @@
         if (data && data.success) {
           state.points = data.points;
           state.savings = data.savings;
-          
-          const logMsg = currentBankMode === 'deposit' 
-            ? `[BANK] Deposited ${amount} chips into savings` 
+
+          const logMsg = currentBankMode === 'deposit'
+            ? `[BANK] Deposited ${amount} chips into savings`
             : `[BANK] Withdrew ${amount} chips from savings`;
           state.history.unshift(logMsg);
           if (state.history.length > 20) state.history.pop();
@@ -419,7 +940,7 @@
 
     function formatActivityLine(text) {
       let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      safeText = safeText.replace(/\b(WIN)\b/g, '<span class="hl-win">$1</span>');
+      safeText = safeText.replace(/\b(WIN|JACKPOT)\b/g, '<span class="hl-win">$1</span>');
       safeText = safeText.replace(/\b(LOST)\b/g, '<span class="hl-loss">$1</span>');
       safeText = safeText.replace(/\b(BUST)\b/g, '<span class="hl-bust">$1</span>');
       safeText = safeText.replace(/\b(PUSH)\b/g, '<span class="hl-push">$1</span>');
@@ -432,11 +953,13 @@
 
       const s = state.stats;
       const winRate = s.totalHands > 0 ? ((s.wins / s.totalHands) * 100).toFixed(1) : 0;
-      
+
       document.getElementById('stat-total').textContent = s.totalHands;
       document.getElementById('stat-winrate').textContent = winRate + '%';
       document.getElementById('stat-record').textContent = `${s.wins} / ${s.losses}`;
       document.getElementById('stat-profit').textContent = (s.netProfit >= 0 ? '+' : '') + s.netProfit;
+
+      renderShopLimits();
 
       const historyBox = document.getElementById('history-box');
       if (!state.history || state.history.length === 0) {
@@ -446,7 +969,8 @@
           if (currentFilter === 'bj') return item.includes('[CHAT BJ]') || item.includes('[BJ]');
           if (currentFilter === 'bank') return item.includes('[BANK]');
           if (currentFilter === 'gift') return item.includes('[GIFT]');
-          return true; // 'all'
+          if (currentFilter === 'scratch') return item.includes('[SCRATCH]');
+          return true;
         });
 
         if (filteredHistory.length === 0) {
