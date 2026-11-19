@@ -108,7 +108,7 @@ body {
 .btn-slate { background: #475569; color: #f8fafc; }
 
 /* ==========================================================================
-   3. TOP HUD HEADER BAR (COMPACT ABOVE-THE-FOLD & SIDE-BY-SIDE BADGE/LOGOUT)
+   3. TOP HUD HEADER BAR (COMPACT ABOVE-THE-FOLD)
    ========================================================================== */
 .hud-header {
   width: calc(100% - (var(--layout-gutter) * 2));
@@ -169,36 +169,15 @@ body {
   color: #4ade80;
 }
 
-/* Paired half-width user badge + logout button matching 1 main action slot */
-.user-session-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  min-width: 240px;
+.user-session-slot {
+  min-width: 120px;
 }
 
-.user-session-pair.single-slot {
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 130px;
-}
-
-.user-session-pair .stat-pill {
-  width: 100%;
-  min-width: 0;
-  padding: 7px 8px;
-  font-size: 8px;
-}
-
-.user-session-pair .stat-pill #username-display {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.btn-logout-beside {
+.btn-logout-top {
   font-size: 8px !important;
-  padding: 6px 8px !important;
+  padding: 6px 10px !important;
   width: 100%;
-  min-width: 0;
+  min-width: 112px;
   height: 34px;
   border-width: 3px !important;
   box-shadow:
@@ -267,21 +246,32 @@ body {
   gap: 10px;
 }
 
-/* Chips Badge Positioned Inside Lower-Left of Felt */
-.felt-chips-badge {
+/* Name Badge Inside Upper-Left & Chips Badge Directly Below on Lower-Left */
+.felt-corner-badge {
   position: absolute;
-  bottom: 10px;
   left: 10px;
   z-index: 5;
   height: 30px;
   padding: 4px 9px;
-  font-size: 9px;
+  font-size: 8px;
   background: rgba(15, 13, 23, 0.92);
   border: 3px solid var(--pixel-border);
   box-shadow:
     inset 2px 2px 0 rgba(255, 255, 255, 0.1),
     0 3px 0 rgba(0, 0, 0, 0.55);
   pointer-events: none;
+  max-width: 175px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.felt-name-badge {
+  top: 10px;
+}
+
+.felt-chips-badge {
+  bottom: 10px;
+  font-size: 9px;
 }
 
 .felt-watermark {
@@ -530,6 +520,14 @@ body {
 .chip-100 { background: #16a34a; }
 .chip-250 { background: #9333ea; }
 .chip-500 { background: #d97706; }
+
+/* Full span across the 5-chip row (5 * 48px + 4 * 8px = 272px, with comfortable wide span) */
+.btn-deal-wide {
+  font-size: 12px !important;
+  padding: 11px 20px !important;
+  width: 316px;
+  max-width: 100%;
+}
 
 .action-buttons-row {
   display: flex;
@@ -847,9 +845,6 @@ body {
 @media (max-width: 640px) {
   .brand-title {
     font-size: 11px;
-  }
-  .user-session-pair {
-    width: 100%;
   }
   .hud-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
