@@ -607,8 +607,11 @@
       document.getElementById('shop-modal').classList.remove('open');
     }
 
-    function closeScratchModal() {
+    async function closeScratchModal() {
       isScratching = false;
+      if (activeScratch && !scratchSettled) {
+        await settleScratchTicket(true);
+      }
       document.getElementById('scratch-modal').classList.remove('open');
       document.getElementById('scratch-card-box').classList.remove('shake-win');
     }
@@ -740,6 +743,56 @@
       checkScratchCompletion(canvas, ctx);
     }
 
+    async function settleScratchTicket(autoClaimed = false) {
+      if (!activeScratch || scratchSettled) return;
+      scratchSettled = true;
+
+      const canvas = document.getElementById('scratch-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const { tierKey, cost, prize, isJackpot } = activeScratch;
+      const tierLabel = SCRATCH_TIERS[tierKey].label;
+      const claimTag = autoClaimed ? ' [AUTO-CLAIMED]' : '';
+      let logMsg = '';
+
+      if (prize > 0) {
+        state.points += prize;
+        state.stats.netProfit += prize;
+        if (isJackpot) {
+          playJackpotSound();
+          document.getElementById('scratch-card-box').classList.add('shake-win');
+          document.getElementById('scratch-status').textContent = `JACKPOT +${prize} CHIPS!${claimTag}`;
+          logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> JACKPOT WIN +${prize} chips${claimTag}`;
+        } else {
+          playWinSound();
+          document.getElementById('scratch-card-box').classList.add('shake-win');
+          document.getElementById('scratch-status').textContent = `WON +${prize} CHIPS!${claimTag}`;
+          logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> WIN +${prize} chips${claimTag}`;
+        }
+      } else {
+        playLossSound();
+        document.getElementById('scratch-status').textContent = `NO WIN (-${cost} CHIPS)${claimTag}`;
+        logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> LOST -${cost} chips${claimTag}`;
+      }
+
+      state.history.unshift(logMsg);
+      if (state.history.length > 20) state.history.pop();
+
+      document.getElementById('scratch-again-btn').style.display = 'inline-flex';
+      saveState();
+      renderUI();
+
+      if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
+        try {
+          const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&isScratch=1&points=${encodeURIComponent(state.points)}&netProfit=${encodeURIComponent(state.stats.netProfit)}&history=${encodeURIComponent(JSON.stringify(state.history))}&shop=${encodeURIComponent(JSON.stringify(shopData))}&localDay=${encodeURIComponent(shopData.day)}&format=json`;
+          await fetch(syncUrl);
+        } catch (err) {
+          console.error("Scratch sync error:", err);
+        }
+      }
+    }
+
     async function checkScratchCompletion(canvas, ctx) {
       if (scratchSettled) return;
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -751,48 +804,7 @@
       }
 
       if (cleared / totalPixels > 0.58) {
-        scratchSettled = true;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const { tierKey, cost, prize, isJackpot } = activeScratch;
-        const tierLabel = SCRATCH_TIERS[tierKey].label;
-        let logMsg = '';
-
-        if (prize > 0) {
-          state.points += prize;
-          state.stats.netProfit += prize;
-          if (isJackpot) {
-            playJackpotSound();
-            document.getElementById('scratch-card-box').classList.add('shake-win');
-            document.getElementById('scratch-status').textContent = `JACKPOT +${prize} CHIPS!`;
-            logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> JACKPOT WIN +${prize} chips`;
-          } else {
-            playWinSound();
-            document.getElementById('scratch-card-box').classList.add('shake-win');
-            document.getElementById('scratch-status').textContent = `WON +${prize} CHIPS!`;
-            logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> WIN +${prize} chips`;
-          }
-        } else {
-          playLossSound();
-          document.getElementById('scratch-status').textContent = `NO WIN (-${cost} CHIPS)`;
-          logMsg = `[SCRATCH] ${tierLabel} (${cost}c) -> LOST -${cost} chips`;
-        }
-
-        state.history.unshift(logMsg);
-        if (state.history.length > 20) state.history.pop();
-
-        document.getElementById('scratch-again-btn').style.display = 'inline-flex';
-        saveState();
-        renderUI();
-
-        if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
-          try {
-            const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&isScratch=1&points=${encodeURIComponent(state.points)}&netProfit=${encodeURIComponent(state.stats.netProfit)}&history=${encodeURIComponent(JSON.stringify(state.history))}&shop=${encodeURIComponent(JSON.stringify(shopData))}&localDay=${encodeURIComponent(shopData.day)}&format=json`;
-            await fetch(syncUrl);
-          } catch (err) {
-            console.error("Scratch sync error:", err);
-          }
-        }
+        await settleScratchTicket(false);
       }
     }
 
