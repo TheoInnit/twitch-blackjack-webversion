@@ -485,7 +485,7 @@
     };
 
     // ========================================================================
-    // 8-BIT STEPPED CYLINDRICAL CHIP STACKS & WHITE BETTING CIRCLE
+    // 67% (2X CRISP PIXEL GRID) CYLINDRICAL CHIP STACKS & WHITE BETTING CIRCLE
     // ========================================================================
     const CHIP_PALETTE = {
       500: { main: '#d97706', dark: '#92400e', light: '#fbbf24', edge: '#fef3c7' },
@@ -509,18 +509,15 @@
       { value: 1,   label: '1',   pal: CHIP_PALETTE[1]   }
     ];
 
-    // Stepped 8-bit isometric ellipse mask (width 24, height 10 in pixel units)
-    // Returns horizontal [xStart, xEnd] runs per row y = 0..9
+    // Stepped 8-bit cap silhouette (width 24, height 8 in pixel units)
     const PIXEL_CAP_ROWS = [
       [7, 17],
       [4, 20],
       [2, 22],
       [1, 23],
       [0, 24],
-      [0, 24],
       [1, 23],
-      [2, 22],
-      [4, 20],
+      [3, 21],
       [7, 17]
     ];
 
@@ -536,49 +533,95 @@
       return chips;
     }
 
-    function buildPixelDiscBody(ox, oy, pal, heightPx) {
-      // Lower half of the 8-bit ellipse (rows 5..9) extruded down by heightPx
-      // No dark outline between stacked chips; shading gives 8-bit cylinder depth
-      let rects = '';
-      for (let r = 5; r <= 9; r++) {
+    function buildThickOuterOutline(ox, topCapY, bottomCapY, width) {
+      // Thick 2px stepped 8-bit outer silhouette around the entire cylinder stack
+      let out = '';
+      // Top cap stepped silhouette + 2px outer border
+      out += `<rect x="${ox + 5}" y="${topCapY - 2}" width="14" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + 2}" y="${topCapY - 1}" width="3" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + 19}" y="${topCapY - 1}" width="3" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox}" y="${topCapY + 1}" width="2" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + width - 2}" y="${topCapY + 1}" width="2" height="2" fill="#09090b" />`;
+
+      // Left & right thick 2px vertical walls down to bottom cap
+      const wallTop = topCapY + 3;
+      const wallBot = bottomCapY + 5;
+      if (wallBot > wallTop) {
+        out += `<rect x="${ox - 2}" y="${wallTop}" width="2" height="${wallBot - wallTop}" fill="#09090b" />`;
+        out += `<rect x="${ox + width}" y="${wallTop}" width="2" height="${wallBot - wallTop}" fill="#09090b" />`;
+      }
+
+      // Bottom cap stepped silhouette + 2px outer border
+      out += `<rect x="${ox - 2}" y="${bottomCapY + 4}" width="2" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + width}" y="${bottomCapY + 4}" width="2" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox}" y="${bottomCapY + 6}" width="3" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + width - 3}" y="${bottomCapY + 6}" width="3" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + 3}" y="${bottomCapY + 7}" width="4" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + width - 7}" y="${bottomCapY + 7}" width="4" height="2" fill="#09090b" />`;
+      out += `<rect x="${ox + 7}" y="${bottomCapY + 8}" width="10" height="2" fill="#09090b" />`;
+
+      return out;
+    }
+
+    function buildContinuousCylinderBody(ox, topCapY, shownChips, stepPx) {
+      // Builds a seamless, straight-sided 8-bit cylinder with horizontal color bands
+      // corresponding to each stacked chip (bottom chip stays static; new chips pile upward)
+      const capW = 24;
+      const bodyStartY = topCapY + 4;
+      const totalBandsH = shownChips.length * stepPx;
+      let svg = '';
+
+      // Render from bottom chip (index 0) up to top chip (index shownChips.length - 1)
+      // Base of the cylinder sits at fixed bottom Y; adding chips shifts topCapY upward
+      for (let i = 0; i < shownChips.length; i++) {
+        const chip = shownChips[i];
+        const pal = chip.pal;
+        // i = 0 is bottom-most chip, sitting at the bottom of the cylinder wall
+        const bandFromBottom = (i + 1) * stepPx;
+        const bandY = (bodyStartY + totalBandsH) - bandFromBottom;
+
+        svg += `<rect x="${ox}" y="${bandY}" width="${capW}" height="${stepPx}" fill="${pal.main}" />`;
+        svg += `<rect x="${ox}" y="${bandY}" width="5" height="${stepPx}" fill="${pal.light}" opacity="0.45" />`;
+        svg += `<rect x="${ox + capW - 5}" y="${bandY}" width="5" height="${stepPx}" fill="${pal.dark}" opacity="0.55" />`;
+      }
+
+      // Bottom stepped cap (rows 5..7) at the very bottom of the cylinder
+      const baseCapY = bodyStartY + totalBandsH - 5;
+      for (let r = 5; r <= 7; r++) {
         const [xs, xe] = PIXEL_CAP_ROWS[r];
         const w = xe - xs;
-        const py = oy + r + heightPx;
-        rects += `<rect x="${ox + xs}" y="${py}" width="${w}" height="1" fill="${pal.main}" />`;
-        const leftW = Math.max(2, Math.floor(w * 0.28));
-        const rightW = Math.max(2, Math.floor(w * 0.28));
-        rects += `<rect x="${ox + xs}" y="${py}" width="${leftW}" height="1" fill="${pal.light}" opacity="0.45" />`;
-        rects += `<rect x="${ox + xe - rightW}" y="${py}" width="${rightW}" height="1" fill="${pal.dark}" opacity="0.55" />`;
+        const py = baseCapY + r;
+        svg += `<rect x="${ox + xs}" y="${py}" width="${w}" height="1" fill="${shownChips[0].pal.main}" />`;
+        svg += `<rect x="${ox + xs}" y="${py}" width="3" height="1" fill="${shownChips[0].pal.light}" opacity="0.45" />`;
+        svg += `<rect x="${ox + xe - 3}" y="${py}" width="3" height="1" fill="${shownChips[0].pal.dark}" opacity="0.55" />`;
       }
-      return rects;
+
+      return svg;
     }
 
     function buildPixelTopChipFace(ox, oy, chip) {
-      // Stepped 8-bit top face + inner casino ring + crisp denomination label
+      // Stepped 8-bit top chip face with clean spacing around the value text
       const pal = chip.pal;
       let rects = '';
       PIXEL_CAP_ROWS.forEach(([xs, xe], r) => {
         const w = xe - xs;
         rects += `<rect x="${ox + xs}" y="${oy + r}" width="${w}" height="1" fill="${pal.main}" />`;
-        // Casino edge stripe ticks on left & right pixel rims
-        if (r >= 2 && r <= 7) {
-          rects += `<rect x="${ox + xs + 1}" y="${oy + r}" width="2" height="1" fill="${pal.edge}" />`;
-          rects += `<rect x="${ox + xe - 3}" y="${oy + r}" width="2" height="1" fill="${pal.edge}" />`;
+        if (r >= 2 && r <= 5) {
+          rects += `<rect x="${ox + xs + 1}" y="${oy + r}" width="1" height="1" fill="${pal.edge}" />`;
+          rects += `<rect x="${ox + xe - 2}" y="${oy + r}" width="1" height="1" fill="${pal.edge}" />`;
         }
       });
 
       // Inner 8-bit casino ring
-      rects += `<rect x="${ox + 6}" y="${oy + 2}" width="12" height="1" fill="${pal.edge}" opacity="0.9" />`;
-      rects += `<rect x="${ox + 6}" y="${oy + 7}" width="12" height="1" fill="${pal.edge}" opacity="0.9" />`;
-      rects += `<rect x="${ox + 4}" y="${oy + 3}" width="2" height="4" fill="${pal.edge}" opacity="0.9" />`;
-      rects += `<rect x="${ox + 18}" y="${oy + 3}" width="2" height="4" fill="${pal.edge}" opacity="0.9" />`;
+      rects += `<rect x="${ox + 6}" y="${oy + 1}" width="12" height="1" fill="${pal.edge}" opacity="0.85" />`;
+      rects += `<rect x="${ox + 6}" y="${oy + 6}" width="12" height="1" fill="${pal.edge}" opacity="0.85" />`;
 
       // Dark center medallion behind value text
-      rects += `<rect x="${ox + 7}" y="${oy + 3}" width="10" height="4" fill="${pal.dark}" opacity="0.65" />`;
+      rects += `<rect x="${ox + 6}" y="${oy + 2}" width="12" height="4" fill="${pal.dark}" opacity="0.65" />`;
 
       return `
         ${rects}
-        <text x="${ox + 12}" y="${oy + 6.4}" text-anchor="middle" fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="4.4" stroke="#09090b" stroke-width="1.2" paint-order="stroke">${chip.label}</text>
+        <text x="${ox + 12}" y="${oy + 5.3}" text-anchor="middle" fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="3.8" stroke="#09090b" stroke-width="1" paint-order="stroke">${chip.label}</text>
       `;
     }
 
@@ -587,28 +630,26 @@
       if (!amount || amount <= 0) return '';
 
       const chips = decomposeChips(amount);
-      const maxVisible = 9;
+      const maxVisible = 8;
       const shown = chips.slice(0, maxVisible);
       const overflowCount = Math.max(0, chips.length - maxVisible);
       const topChip = shown[shown.length - 1] || CHIP_DENOMS[CHIP_DENOMS.length - 1];
 
-      const stepPx = 4;
-      const sliceHeight = 4;
-      const pxW = 28;
-      const topCapY = 4;
-      const baseOriginY = topCapY + (shown.length - 1) * stepPx;
-      const pxH = baseOriginY + 10 + sliceHeight + 4;
-      const ox = 2;
+      // 67% scale: ~2x pixel grid with compact step height
+      const stepPx = 3;
+      const pxW = 32;
+      const maxStackH = maxVisible * stepPx + 12;
+      const pxH = maxStackH + 6;
+      const ox = 4;
 
-      // Render cylindrical stack discs from bottom to top (no dark borders between stacked discs)
-      let stackSvg = '';
-      shown.forEach((c, idx) => {
-        const oy = baseOriginY - idx * stepPx;
-        stackSvg += buildPixelDiscBody(ox, oy, c.pal, sliceHeight);
-      });
+      // Fixed bottom anchor so adding chips piles upward linearly from the bottom
+      const currentCylinderH = shown.length * stepPx;
+      const bottomCapY = pxH - 10;
+      const topCapY = bottomCapY - currentCylinderH - 3;
 
-      // Top face chip design on top of the cylinder
-      stackSvg += buildPixelTopChipFace(ox, topCapY, topChip);
+      const outerOutline = buildThickOuterOutline(ox, topCapY, bottomCapY, 24);
+      const cylinderBody = buildContinuousCylinderBody(ox, topCapY, shown, stepPx);
+      const topCap = buildPixelTopChipFace(ox, topCapY, topChip);
 
       const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
       const topBadge = badgeLabel ? `<span class="stack-role-tag">${badgeLabel}</span>` : '';
@@ -617,7 +658,9 @@
         <div class="chip-stack-wrap ${animClass}">
           ${topBadge}
           <svg class="chip-8bit-svg" width="${pxW * 2}" height="${pxH * 2}" viewBox="0 0 ${pxW} ${pxH}" shape-rendering="crispEdges" aria-label="${amount} chips">
-            ${stackSvg}
+            ${outerOutline}
+            ${cylinderBody}
+            ${topCap}
           </svg>
           <div class="stack-amount-pill">${amount}${overflowBadge}</div>
         </div>
@@ -625,13 +668,12 @@
     }
 
     function buildPixelBetCircleSVG(labelText, isSplitSpot = false) {
-      const w = isSplitSpot ? 44 : 54;
-      const h = 18;
-      // Stepped 8-bit white ring outline
-      const topY = 2;
-      const botY = h - 3;
-      const leftX = 6;
-      const rightX = w - 6;
+      const w = isSplitSpot ? 38 : 46;
+      const h = 14;
+      const topY = 1;
+      const botY = h - 2;
+      const leftX = 4;
+      const rightX = w - 4;
 
       return `
         <svg class="pixel-ring-svg" width="${w * 2}" height="${h * 2}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">
@@ -643,7 +685,7 @@
           <rect x="${leftX + 2}" y="${botY - 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
           <rect x="${rightX - 4}" y="${botY - 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
           <rect x="${leftX + 4}" y="${botY}" width="${rightX - leftX - 8}" height="1" fill="rgba(255,255,255,0.82)" />
-          ${labelText ? `<text x="${w / 2}" y="${h / 2 + 2.2}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="'Press Start 2P', monospace" font-size="3.4">${labelText}</text>` : ''}
+          ${labelText ? `<text x="${w / 2}" y="${h / 2 + 1.8}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="'Press Start 2P', monospace" font-size="3.1">${labelText}</text>` : ''}
         </svg>
       `;
     }
