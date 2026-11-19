@@ -126,16 +126,21 @@
 
       <!-- BETTING CONTROLS -->
       <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
-          <span style="font-size: 10px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
-          <div class="custom-bet-group">
-            <input type="number" id="custom-bet-input" class="bet-input" min="1" placeholder="BET..." onkeydown="if(event.key==='Enter') applyCustomBet()" />
-            <button class="pixel-btn btn-gold" style="font-size: 9px; padding: 7px 9px;" onclick="applyCustomBet()">SET</button>
+        <div class="bet-top-row">
+          <div class="bet-input-stack">
+            <span style="font-size: 10px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
+            <div class="custom-bet-group">
+              <input type="number" id="custom-bet-input" class="bet-input" min="1" placeholder="BET..." onkeydown="if(event.key==='Enter') applyCustomBet()" />
+              <button class="pixel-btn btn-gold" style="font-size: 9px; padding: 7px 9px;" onclick="applyCustomBet()">SET</button>
+            </div>
           </div>
-          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="minBet()">MIN</button>
-          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="halfBet()">1/2</button>
-          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="maxBet()">MAX</button>
-          <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 7px 9px;" onclick="clearBet()">CLEAR</button>
+
+          <div class="quick-bet-keypad" aria-label="Quick bet presets">
+            <button type="button" class="pixel-btn btn-slate" onclick="maxBet()">MAX</button>
+            <button type="button" class="pixel-btn btn-slate" onclick="halfBet()">1/2</button>
+            <button type="button" class="pixel-btn btn-slate" onclick="minBet()">MIN</button>
+            <button type="button" class="pixel-btn btn-slate" onclick="clearBet()">CLEAR</button>
+          </div>
         </div>
 
         <div class="chip-row">
@@ -146,7 +151,7 @@
           <button class="pixel-chip chip-500" onclick="addBet(500)">+500</button>
         </div>
 
-        <button class="pixel-btn btn-green btn-deal-wide" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
+        <button class="pixel-btn btn-green btn-deal-aligned" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
           DEAL HAND
         </button>
       </div>
