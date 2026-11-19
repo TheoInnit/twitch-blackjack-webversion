@@ -28,7 +28,6 @@
   box-sizing: border-box;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  image-rendering: pixelated;
 }
 
 body {
@@ -360,9 +359,9 @@ body {
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: center;
-  gap: 18px;
+  gap: 20px;
   width: 100%;
-  padding: 4px 116px 26px;
+  padding: 4px 116px 24px;
   min-height: 82px;
 }
 
@@ -374,38 +373,25 @@ body {
 }
 
 .bet-circle-ring {
-  min-width: 96px;
-  height: 44px;
-  padding: 0 14px;
-  border-radius: 50%;
-  border: 2px dashed rgba(255, 255, 255, 0.68);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, 0.18),
-    0 2px 0 rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 104px;
+  min-height: 44px;
 }
 
-.bet-circle-spot.has-chips .bet-circle-ring {
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.88);
-  background: rgba(255, 255, 255, 0.1);
+.white-ring-svg {
+  display: block;
 }
 
-.bet-circle-spot.ins-spot .bet-circle-ring {
-  min-width: 78px;
-  border-color: rgba(226, 232, 240, 0.82);
-}
-
-.bet-circle-hint {
-  font-size: 7px;
-  color: rgba(255, 255, 255, 0.75);
-  letter-spacing: 0.4px;
-  white-space: nowrap;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.65);
+.white-ring-backdrop {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .bet-circle-caption {
@@ -415,10 +401,12 @@ body {
 }
 
 .chip-pair-container {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .chip-stack-wrap {
@@ -429,82 +417,19 @@ body {
   position: relative;
 }
 
-/* Single outer black silhouette outline around the whole cylindrical stack */
-.chip-cyl-silhouette {
+/* Single outer black silhouette outline around the cylindrical stack */
+.chip-cyl-svg {
+  display: block;
+  overflow: visible;
   filter:
-    drop-shadow(1px 0 0 #09090b)
-    drop-shadow(-1px 0 0 #09090b)
-    drop-shadow(0 1px 0 #09090b)
-    drop-shadow(0 -1px 0 #09090b);
+    drop-shadow(1.2px 0 0 #09090b)
+    drop-shadow(-1.2px 0 0 #09090b)
+    drop-shadow(0 1.2px 0 #09090b)
+    drop-shadow(0 -1.2px 0 #09090b);
 }
-
-.chip-stack-column {
-  width: 38px;
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-/* Cylindrical side wall slice: NO dark outline between stacked slices */
-.cyl-slice {
-  position: absolute;
-  left: 3px;
-  width: 32px;
-  height: 11px;
-  border-radius: 0 0 16px 16px / 0 0 6px 6px;
-  box-shadow:
-    inset 6px 0 0 rgba(255, 255, 255, 0.24),
-    inset -6px 0 0 rgba(0, 0, 0, 0.34),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.32);
-}
-
-/* Top face cap of the cylinder with real casino chip design */
-.chip-top-cap {
-  position: absolute;
-  left: 2px;
-  width: 34px;
-  height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
-}
-
-.chip-top-inner {
-  width: 24px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.85);
-  background: rgba(9, 9, 11, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chip-top-val {
-  font-size: 5px;
-  line-height: 1;
-  color: #ffffff;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
-  letter-spacing: -0.3px;
-}
-
-/* Denomination Color Palette */
-.denom-500 { background-color: #d97706; }
-.denom-250 { background-color: #9333ea; }
-.denom-100 { background-color: #16a34a; }
-.denom-50  { background-color: #dc2626; }
-.denom-25  { background-color: #2563eb; }
-.denom-10  { background-color: #0891b2; }
-.denom-5   { background-color: #e11d48; }
-.denom-1   { background-color: #64748b; }
 
 .stack-amount-pill {
-  background: rgba(9, 9, 11, 0.9);
+  background: rgba(9, 9, 11, 0.92);
   border: 2px solid #09090b;
   color: #ffffff;
   font-size: 7px;
@@ -520,7 +445,7 @@ body {
   font-size: 6px;
   padding: 1px 4px;
   line-height: 1.2;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .stack-overflow {
