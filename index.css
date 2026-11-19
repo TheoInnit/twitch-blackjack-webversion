@@ -354,7 +354,7 @@ body {
   color: #fde047;
 }
 
-/* Fixed-Height Betting Chip Area (Single Ring Baked in Felt Texture) */
+/* Fixed-Height Betting Chip Area (Single Static Ring Baked in Felt Texture) */
 .betting-circles-stage {
   display: flex;
   align-items: center;
@@ -373,6 +373,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 14px;
+  transform: translateY(-4px);
 }
 
 .chip-pair-container {
@@ -407,17 +408,6 @@ body {
   white-space: nowrap;
   flex-shrink: 0;
   margin-top: -4px;
-}
-
-.stack-role-tag {
-  background: #09090b;
-  border: 2px solid #ffffff;
-  color: #ffffff;
-  font-size: 6px;
-  padding: 1px 4px;
-  line-height: 1.1;
-  flex-shrink: 0;
-  margin-bottom: -2px;
 }
 
 .stack-overflow {
