@@ -63,7 +63,7 @@
        ======================================================================== -->
   <main class="table-wrapper">
     <div class="wood-frame">
-      <div class="felt-surface">
+      <div class="felt-surface" id="felt-surface">
 
         <!-- UPPER-LEFT NAME BADGE INSIDE PLAY TABLE -->
         <div class="stat-pill felt-corner-badge felt-name-badge" id="user-badge">
@@ -97,8 +97,8 @@
           <div class="player-hands-grid" id="player-hands-container">
             <!-- Player hand slots render here -->
           </div>
-          <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting circles">
-            <!-- Felt-baked pixelated bet rings & centered overhead chip stacks render here -->
+          <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting zone">
+            <!-- Centered overhead chip stacks render here over the felt-baked circle -->
           </div>
         </section>
 
@@ -485,7 +485,7 @@
     };
 
     // ========================================================================
-    // OVERHEAD 8-BIT CHIPS, FELT-BAKED PIXEL CIRCLE & UNIFORM SHADOWS
+    // OVERHEAD 8-BIT CHIPS, FELT TEXTURE RING & UNIFORM SHADOWS
     // ========================================================================
     const CHIP_PALETTE = {
       500: { main: '#d97706', dark: '#78350f', light: '#fbbf24', edge: '#fef3c7' },
@@ -531,8 +531,11 @@
       [6, 12]
     ];
 
-    // Baked 24x24 pixel ring (1px perimeter pixels on a 24x24 pixel grid)
-    const FELT_PIXEL_RING_PIXELS = (() => {
+    // Paint the 8-bit pixelated betting circle directly into the felt background texture
+    function applyFeltTextureWithCircle() {
+      const feltEl = document.getElementById('felt-surface');
+      if (!feltEl) return;
+
       const gridSize = 24;
       const rOuter = 11.2;
       const rInner = 9.4;
@@ -541,16 +544,14 @@
 
       for (let y = 0; y < gridSize; y++) {
         for (let x = 0; x < gridSize; x++) {
-          const dx = x - center;
-          const dy = y - center;
-          const dist = Math.hypot(dx, dy);
+          const dist = Math.hypot(x - center, y - center);
           if (dist <= rOuter && dist >= rInner) {
             mask[y][x] = true;
           }
         }
       }
 
-      const rects = [];
+      let rects = '';
       for (let y = 0; y < gridSize; y++) {
         let x = 0;
         while (x < gridSize) {
@@ -560,11 +561,28 @@
           }
           const start = x;
           while (x < gridSize && mask[y][x]) x++;
-          rects.push(`<rect x="${start}" y="${y}" width="${x - start}" height="1" fill="#9ec9aa" opacity="0.72" />`);
+          rects += `<rect x="${start}" y="${y}" width="${x - start}" height="1" fill="#9ec9aa" fill-opacity="0.72"/>`;
         }
       }
-      return rects.join('');
-    })();
+
+      const ringSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${gridSize} ${gridSize}" shape-rendering="crispEdges">${rects}</svg>`;
+      const encodedRing = `url("data:image/svg+xml,${encodeURIComponent(ringSvg)}")`;
+
+      const checkerLayers = [
+        'linear-gradient(45deg, var(--felt-dark) 25%, transparent 25%)',
+        'linear-gradient(-45deg, var(--felt-dark) 25%, transparent 25%)',
+        'linear-gradient(45deg, transparent 75%, var(--felt-dark) 75%)',
+        'linear-gradient(-45deg, transparent 75%, var(--felt-dark) 75%)'
+      ].join(', ');
+
+      const checkerSizes = ['8px 8px', '8px 8px', '8px 8px', '8px 8px'].join(', ');
+      const checkerPositions = ['0 0', '0 4px', '4px -4px', '-4px 0'].join(', ');
+
+      feltEl.style.backgroundImage = `${encodedRing}, ${checkerLayers}`;
+      feltEl.style.backgroundSize = `64px 64px, ${checkerSizes}`;
+      feltEl.style.backgroundPosition = `50% 342px, ${checkerPositions}`;
+      feltEl.style.backgroundRepeat = `no-repeat, repeat, repeat, repeat, repeat`;
+    }
 
     function decomposeChips(amount) {
       let rem = Math.max(0, Math.floor(Number(amount) || 0));
@@ -674,15 +692,6 @@
       `;
     }
 
-    function buildFeltPixelRingHTML(isSplitSpot = false) {
-      const pxSize = isSplitSpot ? 54 : 64;
-      return `
-        <svg class="felt-pixel-ring-svg" width="${pxSize}" height="${pxSize}" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">
-          ${FELT_PIXEL_RING_PIXELS}
-        </svg>
-      `;
-    }
-
     function syncTableChipOverlayFromGame() {
       if (tableChipOverlay.mode === 'resolving') return;
       if (!state.game) {
@@ -720,31 +729,28 @@
       };
     }
 
+    // Single betting zone on the felt: when split, stacks move side-by-side without extra circles
     function renderBettingCircles() {
       const stage = document.getElementById('betting-circles-stage');
       if (!stage) return;
 
       if (tableChipOverlay.mode === 'idle' || !tableChipOverlay.hands.length) {
-        stage.innerHTML = `
-          <div class="bet-circle-spot is-empty">
-            <div class="bet-circle-ring">
-              ${buildFeltPixelRingHTML(false)}
-            </div>
-          </div>
-        `;
+        stage.innerHTML = '';
         return;
       }
 
       const isSplitView = tableChipOverlay.hands.length > 1;
-      const spotsHtml = tableChipOverlay.hands.map((h) => {
+      const stacksHtml = tableChipOverlay.hands.map((h, idx) => {
         const betAnim = (h.animateBet && animationsEnabled) ? ' chip-drop-anim' : '';
         const payoutAnim = (h.animatePayout && animationsEnabled) ? ' chip-payout-side-anim' : '';
         const resolveClass = (h.resolveAnim && animationsEnabled) ? ` ${h.resolveAnim}` : '';
         const hasChips = (h.bet > 0 || h.payout > 0);
+        if (!hasChips) return '';
 
+        const handTag = isSplitView ? `H${idx + 1}` : (h.payout > 0 ? 'BET' : '');
         const betStack = buildChipStackHTML(h.bet, {
           animClass: betAnim,
-          badgeLabel: h.payout > 0 ? 'BET' : ''
+          badgeLabel: handTag
         });
 
         const winStack = h.payout > 0 ? buildChipStackHTML(h.payout, {
@@ -753,17 +759,9 @@
         }) : '';
 
         return `
-          <div class="bet-circle-spot ${hasChips ? 'has-chips' : 'is-empty'}">
-            <div class="bet-circle-ring ${resolveClass}">
-              ${buildFeltPixelRingHTML(isSplitView)}
-              ${hasChips ? `
-                <div class="chip-pair-container">
-                  ${betStack}
-                  ${winStack}
-                </div>
-              ` : ''}
-            </div>
-            ${isSplitView ? `<div class="bet-circle-caption">HAND</div>` : ''}
+          <div class="chip-pair-container ${resolveClass}">
+            ${betStack}
+            ${winStack}
           </div>
         `;
       }).join('');
@@ -775,19 +773,13 @@
           ? ' chip-to-player-anim'
           : ((tableChipOverlay.insuranceOutcome === 'lost' && animationsEnabled) ? ' chip-to-dealer-anim' : '');
         insHtml = `
-          <div class="bet-circle-spot ins-spot has-chips">
-            <div class="bet-circle-ring ins-ring ${insResolve}">
-              ${buildFeltPixelRingHTML(true)}
-              <div class="chip-pair-container">
-                ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
-              </div>
-            </div>
-            <div class="bet-circle-caption">INSURANCE</div>
+          <div class="chip-pair-container ${insResolve}">
+            ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
           </div>
         `;
       }
 
-      stage.innerHTML = spotsHtml + insHtml;
+      stage.innerHTML = `<div class="betting-chips-cluster">${stacksHtml}${insHtml}</div>`;
     }
 
     function applySliderState(btnEl, labelEl, enabled) {
@@ -2131,6 +2123,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
+      applyFeltTextureWithCircle();
       setupMainButtonHoverTooltips();
       await loadState();
       renderUI();
