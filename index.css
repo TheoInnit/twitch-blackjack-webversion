@@ -373,7 +373,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .chip-pair-container {
@@ -401,6 +401,10 @@ body {
 }
 
 .stack-amount-pill {
+  position: absolute;
+  top: 59px;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(9, 9, 11, 0.94);
   border: 2px solid #09090b;
   color: #ffffff;
@@ -409,7 +413,6 @@ body {
   line-height: 1.1;
   white-space: nowrap;
   flex-shrink: 0;
-  margin-top: -4px;
 }
 
 .stack-overflow {
