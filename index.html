@@ -98,7 +98,7 @@
             <!-- Player hand slots render here -->
           </div>
           <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting zone">
-            <!-- Centered overhead chip stacks render here over the felt-baked circle -->
+            <!-- Centered overhead chip stacks render here over the static felt-baked ring -->
           </div>
         </section>
 
@@ -485,7 +485,7 @@
     };
 
     // ========================================================================
-    // OVERHEAD 8-BIT CHIPS, FELT TEXTURE RING & UNIFORM SHADOWS
+    // OVERHEAD 8-BIT CHIPS, STATIC FELT TEXTURE RING & UNIFORM SHADOWS
     // ========================================================================
     const CHIP_PALETTE = {
       500: { main: '#d97706', dark: '#78350f', light: '#fbbf24', edge: '#fef3c7' },
@@ -531,9 +531,10 @@
       [6, 12]
     ];
 
-    // Paint the 8-bit pixelated betting circle directly into the felt background texture
+    // Paint a plain, static 8-bit pixelated betting ring directly into the felt background texture
     function applyFeltTextureWithCircle() {
       const feltEl = document.getElementById('felt-surface');
+      const stageEl = document.getElementById('betting-circles-stage');
       if (!feltEl) return;
 
       const gridSize = 24;
@@ -568,6 +569,17 @@
       const ringSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${gridSize} ${gridSize}" shape-rendering="crispEdges">${rects}</svg>`;
       const encodedRing = `url("data:image/svg+xml,${encodeURIComponent(ringSvg)}")`;
 
+      const ringSize = 68;
+      let ringY = 356;
+      if (stageEl) {
+        const feltRect = feltEl.getBoundingClientRect();
+        const stageRect = stageEl.getBoundingClientRect();
+        if (feltRect.height > 0 && stageRect.height > 0) {
+          const stageCenterY = (stageRect.top - feltRect.top) + (stageRect.height / 2) - 4;
+          ringY = Math.round(stageCenterY - (ringSize / 2));
+        }
+      }
+
       const checkerLayers = [
         'linear-gradient(45deg, var(--felt-dark) 25%, transparent 25%)',
         'linear-gradient(-45deg, var(--felt-dark) 25%, transparent 25%)',
@@ -579,8 +591,8 @@
       const checkerPositions = ['0 0', '0 4px', '4px -4px', '-4px 0'].join(', ');
 
       feltEl.style.backgroundImage = `${encodedRing}, ${checkerLayers}`;
-      feltEl.style.backgroundSize = `64px 64px, ${checkerSizes}`;
-      feltEl.style.backgroundPosition = `50% 342px, ${checkerPositions}`;
+      feltEl.style.backgroundSize = `${ringSize}px ${ringSize}px, ${checkerSizes}`;
+      feltEl.style.backgroundPosition = `50% ${ringY}px, ${checkerPositions}`;
       feltEl.style.backgroundRepeat = `no-repeat, repeat, repeat, repeat, repeat`;
     }
 
@@ -658,7 +670,7 @@
     }
 
     function buildChipStackHTML(amount, opts = {}) {
-      const { animClass = '', badgeLabel = '' } = opts;
+      const { animClass = '' } = opts;
       if (!amount || amount <= 0) return '';
 
       const chips = decomposeChips(amount);
@@ -677,11 +689,9 @@
       const topChipLayer = buildOverheadDiscSVG(topChip, ox, oy, 1);
 
       const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
-      const topBadge = badgeLabel ? `<span class="stack-role-tag">${badgeLabel}</span>` : '';
 
       return `
         <div class="chip-stack-wrap ${animClass}">
-          ${topBadge}
           <svg class="chip-8bit-svg" width="${pxW * 2}" height="${pxH * 2}" viewBox="0 0 ${pxW} ${pxH}" shape-rendering="crispEdges" aria-label="${amount} chips">
             ${shadowLayer}
             ${topChipLayer}
@@ -729,7 +739,7 @@
       };
     }
 
-    // Single betting zone on the felt: when split, stacks move side-by-side without extra circles
+    // Single static ring on felt; split stacks align side-by-side without extra circles
     function renderBettingCircles() {
       const stage = document.getElementById('betting-circles-stage');
       if (!stage) return;
@@ -739,24 +749,15 @@
         return;
       }
 
-      const isSplitView = tableChipOverlay.hands.length > 1;
-      const stacksHtml = tableChipOverlay.hands.map((h, idx) => {
+      const stacksHtml = tableChipOverlay.hands.map((h) => {
         const betAnim = (h.animateBet && animationsEnabled) ? ' chip-drop-anim' : '';
         const payoutAnim = (h.animatePayout && animationsEnabled) ? ' chip-payout-side-anim' : '';
         const resolveClass = (h.resolveAnim && animationsEnabled) ? ` ${h.resolveAnim}` : '';
         const hasChips = (h.bet > 0 || h.payout > 0);
         if (!hasChips) return '';
 
-        const handTag = isSplitView ? `H${idx + 1}` : (h.payout > 0 ? 'BET' : '');
-        const betStack = buildChipStackHTML(h.bet, {
-          animClass: betAnim,
-          badgeLabel: handTag
-        });
-
-        const winStack = h.payout > 0 ? buildChipStackHTML(h.payout, {
-          animClass: payoutAnim,
-          badgeLabel: 'WIN'
-        }) : '';
+        const betStack = buildChipStackHTML(h.bet, { animClass: betAnim });
+        const winStack = h.payout > 0 ? buildChipStackHTML(h.payout, { animClass: payoutAnim }) : '';
 
         return `
           <div class="chip-pair-container ${resolveClass}">
@@ -774,7 +775,7 @@
           : ((tableChipOverlay.insuranceOutcome === 'lost' && animationsEnabled) ? ' chip-to-dealer-anim' : '');
         insHtml = `
           <div class="chip-pair-container ${insResolve}">
-            ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
+            ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim })}
           </div>
         `;
       }
@@ -2123,11 +2124,12 @@
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
-      applyFeltTextureWithCircle();
       setupMainButtonHoverTooltips();
       await loadState();
       renderUI();
+      applyFeltTextureWithCircle();
     });
+    window.addEventListener('resize', applyFeltTextureWithCircle);
   </script>
 </body>
 </html>
