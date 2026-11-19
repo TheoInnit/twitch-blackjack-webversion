@@ -98,7 +98,7 @@
             <!-- Player hand slots render here -->
           </div>
           <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting circles">
-            <!-- Physical pixel chip stacks & betting circles render here -->
+            <!-- Isometric cylindrical chip stacks & white betting circles render here -->
           </div>
         </section>
 
@@ -370,10 +370,9 @@
     let rebindingAction = null;
     let audioCtx = null;
 
-    // Visual table chip overlay state (for smooth bet/DD/insurance/payout animations)
     let tableChipOverlay = {
-      mode: 'idle', // 'idle' | 'prebet' | 'active' | 'resolving'
-      hands: [],     // [{ bet, payout, outcome, animateBet, animatePayout, resolveAnim }]
+      mode: 'idle',
+      hands: [],
       insuranceCost: 0,
       insuranceOutcome: null,
       animateInsurance: false
@@ -486,7 +485,7 @@
     };
 
     // ========================================================================
-    // PHYSICAL CHIP DENOMINATIONS, STACKING & CASINO CIRCLE RENDERER
+    // ISOMETRIC CYLINDRICAL CHIP STACKS & WHITE BETTING CIRCLE RENDERER
     // ========================================================================
     const CHIP_DENOMS = [
       { value: 500, cls: 'denom-500', label: '500' },
@@ -514,25 +513,54 @@
     function buildChipStackHTML(amount, opts = {}) {
       const { animClass = '', badgeLabel = '' } = opts;
       if (!amount || amount <= 0) return '';
+
       const chips = decomposeChips(amount);
       const maxVisible = 9;
       const shown = chips.slice(0, maxVisible);
       const overflowCount = Math.max(0, chips.length - maxVisible);
+      const topChip = shown[shown.length - 1] || CHIP_DENOMS[CHIP_DENOMS.length - 1];
 
-      const discsHtml = shown.map((c, idx) => {
-        const offsetY = -(idx * 4);
-        return `<div class="stack-disc ${c.cls}" style="transform: translateY(${offsetY}px); z-index: ${idx + 1};" title="${c.label} CHIPS"></div>`;
+      const stepPx = 5;
+      const cylinderBaseHeight = 14;
+      const colHeight = cylinderBaseHeight + (shown.length - 1) * stepPx + 12;
+
+      // Cylindrical discs: no inner seam borders between stacked cylinders; outer outline applied on wrapper
+      const cylSlicesHtml = shown.map((c, idx) => {
+        const bottomPx = idx * stepPx;
+        return `
+          <div
+            class="cyl-slice ${c.cls}"
+            style="bottom: ${bottomPx}px; z-index: ${idx + 1};"
+            title="${c.label} CHIP"
+          ></div>
+        `;
       }).join('');
 
-      const heightPx = 24 + (shown.length - 1) * 4;
+      // Top face chip design sitting cleanly on top of the cylinder stack
+      const topBottomPx = (shown.length - 1) * stepPx + 6;
+      const topFaceHtml = `
+        <div
+          class="chip-top-cap ${topChip.cls}"
+          style="bottom: ${topBottomPx}px; z-index: ${shown.length + 2};"
+          title="${topChip.label} CHIP"
+        >
+          <div class="chip-top-inner">
+            <span class="chip-top-val">${topChip.label}</span>
+          </div>
+        </div>
+      `;
+
       const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
       const topBadge = badgeLabel ? `<span class="stack-role-tag">${badgeLabel}</span>` : '';
 
       return `
         <div class="chip-stack-wrap ${animClass}">
           ${topBadge}
-          <div class="chip-stack-column" style="height: ${Math.max(24, heightPx)}px;">
-            ${discsHtml}
+          <div class="chip-cyl-silhouette">
+            <div class="chip-stack-column" style="height: ${colHeight}px;">
+              ${cylSlicesHtml}
+              ${topFaceHtml}
+            </div>
           </div>
           <div class="stack-amount-pill">${amount}${overflowBadge}</div>
         </div>
@@ -562,7 +590,7 @@
       const g = state.game;
       tableChipOverlay = {
         mode: 'active',
-        hands: g.bets.map((b, i) => ({
+        hands: g.bets.map((b) => ({
           bet: b,
           payout: 0,
           outcome: null,
@@ -1073,7 +1101,6 @@
       isBusyAnimating = true;
       updateControlsVisibility(false);
 
-      // Step 1: Dealer places winning chips beside your bet stack
       const anyWin = handPlans.some(p => p.winningsSideAmount > 0);
       if (anyWin) {
         tableChipOverlay = {
@@ -1095,7 +1122,6 @@
         await sleep(360);
       }
 
-      // Step 2: Sweep chips to player (win/push) or away toward dealer (bust/lose)
       tableChipOverlay = {
         mode: 'resolving',
         hands: handPlans.map(p => ({
