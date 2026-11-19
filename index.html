@@ -148,7 +148,7 @@
     .hud-stats {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
     }
 
@@ -165,6 +165,23 @@
 
     .stat-pill span.val {
       color: #4ade80;
+    }
+
+    .user-badge-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .btn-logout-under {
+      font-size: 7px !important;
+      padding: 5px 8px !important;
+      border-width: 3px !important;
+      box-shadow:
+        inset -2px -2px 0px rgba(0, 0, 0, 0.4),
+        inset 2px 2px 0px rgba(255, 255, 255, 0.25),
+        0 3px 0 var(--pixel-border) !important;
     }
 
     .hud-actions {
@@ -302,12 +319,21 @@
     }
 
     /* ==========================================================================
-       6. MINIMALIST PIXEL-ART PLAYING CARDS
+       6. MINIMALIST PIXEL-ART PLAYING CARDS & SMOOTH DEAL ANIMATION
        ========================================================================== */
-    @keyframes pixelDeal {
-      0% { transform: translateY(-18px) scale(0.85); opacity: 0; }
-      60% { transform: translateY(3px) scale(1.02); opacity: 1; }
-      100% { transform: translateY(0) scale(1); opacity: 1; }
+    @keyframes pixelDealSmooth {
+      0% {
+        transform: translate(44px, -42px) scale(0.76) rotate(4deg);
+        opacity: 0;
+      }
+      65% {
+        transform: translate(-2px, 3px) scale(1.03) rotate(-0.5deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+        opacity: 1;
+      }
     }
 
     .pixel-card {
@@ -325,7 +351,11 @@
       justify-content: center;
       gap: 10px;
       position: relative;
-      animation: pixelDeal 0.18s steps(3) forwards;
+      opacity: 1;
+    }
+
+    .pixel-card.anim-deal {
+      animation: pixelDealSmooth 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     .pixel-card.red {
@@ -503,7 +533,7 @@
     }
 
     /* ==========================================================================
-       10. FOOTER, MODALS & PIXEL HOTKEY TOOLTIP
+       10. FOOTER, MODALS, HOTKEY EDITOR & PIXEL HOTKEY TOOLTIP
        ========================================================================== */
     .page-footer {
       padding: 10px 0 20px;
@@ -536,6 +566,11 @@
       display: flex;
     }
 
+    .modal-backdrop.sub-modal {
+      z-index: 130;
+      background: rgba(9, 9, 11, 0.72);
+    }
+
     .modal-card {
       background: #1e1b2e;
       width: 100%;
@@ -554,6 +589,68 @@
       justify-content: space-between;
       border-bottom: 4px solid #09090b;
       padding-bottom: 10px;
+    }
+
+    .option-row {
+      background: #0f0d17;
+      border: 3px solid var(--pixel-border);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 9px;
+    }
+
+    .option-label-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .option-desc {
+      font-size: 7px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .hotkey-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hotkey-row {
+      background: #0f0d17;
+      border: 3px solid var(--pixel-border);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 9px;
+    }
+
+    .hotkey-bind-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      min-width: 96px;
+      padding: 8px 10px;
+      background: #1e1b2e;
+      color: var(--gold);
+      border: 3px solid #475569;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .hotkey-bind-btn:hover:not(:disabled) {
+      border-color: var(--gold);
+    }
+
+    .hotkey-bind-btn.listening {
+      background: var(--gold);
+      color: #18181b;
+      border-color: #ffffff;
     }
 
     .custom-bet-group {
@@ -665,17 +762,19 @@
         <span>CHIPS:</span>
         <span class="val" id="balance-display">1000</span>
       </div>
-      <div class="stat-pill" id="user-badge">
-        <span style="color:#c084fc;">@</span>
-        <span id="username-display">GUEST</span>
+      <div class="user-badge-stack">
+        <div class="stat-pill" id="user-badge">
+          <span style="color:#c084fc;">@</span>
+          <span id="username-display">GUEST</span>
+        </div>
+        <button class="pixel-btn btn-red btn-logout-under" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+          LOGOUT
+        </button>
       </div>
     </div>
 
     <div class="hud-actions">
       <a href="wallet.html" id="btn-wallet" class="pixel-btn btn-gold" style="text-decoration: none; display: none;">WALLET</a>
-      <button class="pixel-btn btn-blue" id="btn-sync" onclick="manualSyncWallet()" style="display: none;" title="Sync Chips & Stats">
-        SYNC
-      </button>
       <button class="pixel-btn btn-amber" id="btn-daily" onclick="claimDaily()">
         DAILY +500
       </button>
@@ -689,11 +788,8 @@
         </svg>
         <span id="twitch-btn-text">LOGIN TWITCH</span>
       </button>
-      <button class="pixel-btn btn-red" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
-        LOGOUT
-      </button>
-      <button class="pixel-btn btn-slate" id="btn-sound" onclick="toggleSound()" title="Toggle 8-Bit Sound">
-        SFX:ON
+      <button class="pixel-btn btn-slate" id="btn-options" onclick="openOptionsModal()" title="Game Options">
+        OPTIONS
       </button>
     </div>
   </header>
@@ -763,26 +859,26 @@
           <button class="pixel-chip chip-500" onclick="addBet(500)">+500</button>
         </div>
 
-        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 14px 32px;" id="btn-deal" data-hotkey="SPACE" onclick="startGame()">
+        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 14px 32px;" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
           DEAL HAND
         </button>
       </div>
 
       <!-- IN-GAME ACTION BUTTONS -->
       <div id="gameplay-controls" class="action-buttons-row" style="display: none;">
-        <button class="pixel-btn btn-green" id="btn-hit" data-hotkey="A" onclick="playerHit()">
+        <button class="pixel-btn btn-green" id="btn-hit" data-hotkey-action="hit" onclick="playerHit()">
           HIT
         </button>
-        <button class="pixel-btn btn-red" id="btn-stand" data-hotkey="S" onclick="playerStand()">
+        <button class="pixel-btn btn-red" id="btn-stand" data-hotkey-action="stand" onclick="playerStand()">
           STAND
         </button>
-        <button class="pixel-btn btn-blue" id="btn-split" data-hotkey="D" onclick="playerSplit()" disabled>
+        <button class="pixel-btn btn-blue" id="btn-split" data-hotkey-action="split" onclick="playerSplit()" disabled>
           SPLIT
         </button>
-        <button class="pixel-btn btn-gold" id="btn-dd" data-hotkey="F" onclick="playerDoubleDown()" disabled>
+        <button class="pixel-btn btn-gold" id="btn-dd" data-hotkey-action="dd" onclick="playerDoubleDown()" disabled>
           DOUBLE (DD)
         </button>
-        <button class="pixel-btn btn-cyan" id="btn-insurance" data-hotkey="G" onclick="playerInsurance()" disabled>
+        <button class="pixel-btn btn-cyan" id="btn-insurance" data-hotkey-action="insurance" onclick="playerInsurance()" disabled>
           INSURANCE
         </button>
       </div>
@@ -804,6 +900,110 @@
   <footer class="page-footer">
     created by <a href="http://twitch.tv/theoinnit_" target="_blank">TheoInnit_</a>
   </footer>
+
+  <!-- ========================================================================
+       OPTIONS POPUP MODAL
+       ======================================================================== -->
+  <div class="modal-backdrop" id="options-modal">
+    <div class="modal-card pixel-box" style="max-width: 440px;">
+      <div class="modal-title">
+        <span>OPTIONS</span>
+        <button class="pixel-btn btn-red" style="padding: 6px 10px; font-size: 9px;" onclick="closeOptionsModal()">X</button>
+      </div>
+
+      <div class="option-row">
+        <div class="option-label-group">
+          <span>CLOUD SYNC</span>
+          <span class="option-desc" id="options-sync-desc">SYNC CHIPS &amp; STATS WITH SHEET</span>
+        </div>
+        <button class="pixel-btn btn-blue" id="btn-modal-sync" style="font-size: 8px; padding: 8px 10px;" onclick="manualSyncWallet()">
+          SYNC
+        </button>
+      </div>
+
+      <div class="option-row">
+        <div class="option-label-group">
+          <span>ANIMATIONS</span>
+          <span class="option-desc">SMOOTH CARD DEALING &amp; TURN FLOW</span>
+        </div>
+        <button class="pixel-btn btn-green" id="btn-toggle-anim" style="font-size: 8px; padding: 8px 10px;" onclick="toggleAnimations()">
+          ANIM:ON
+        </button>
+      </div>
+
+      <div class="option-row">
+        <div class="option-label-group">
+          <span>SOUND EFFECTS</span>
+          <span class="option-desc">8-BIT SFX &amp; CARD DEAL SOUND</span>
+        </div>
+        <button class="pixel-btn btn-slate" id="btn-sound" style="font-size: 8px; padding: 8px 10px;" onclick="toggleSound()">
+          SFX:ON
+        </button>
+      </div>
+
+      <div class="option-row">
+        <div class="option-label-group">
+          <span>HOTKEYS</span>
+          <span class="option-desc">CUSTOMIZE MAIN ACTION SHORTCUTS</span>
+        </div>
+        <button class="pixel-btn btn-gold" style="font-size: 8px; padding: 8px 10px;" onclick="openHotkeysModal()">
+          HOTKEYS
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       HOTKEYS EDITOR POPUP MODAL (ON TOP OF OPTIONS)
+       ======================================================================== -->
+  <div class="modal-backdrop sub-modal" id="hotkeys-modal">
+    <div class="modal-card pixel-box" style="max-width: 440px;">
+      <div class="modal-title">
+        <span>HOTKEYS</span>
+        <button class="pixel-btn btn-red" style="padding: 6px 10px; font-size: 9px;" onclick="closeHotkeysModal()">X</button>
+      </div>
+
+      <div style="font-size: 8px; color: #94a3b8; line-height: 1.5;" id="hotkey-editor-status">
+        CLICK A KEY SLOT AND PRESS ANY KEY TO REBIND.
+      </div>
+
+      <div class="hotkey-list">
+        <div class="hotkey-row">
+          <span>DEAL HAND</span>
+          <button class="hotkey-bind-btn" id="bind-btn-deal" onclick="startRebindHotkey('deal', this)">SPACE</button>
+        </div>
+        <div class="hotkey-row">
+          <span>HIT</span>
+          <button class="hotkey-bind-btn" id="bind-btn-hit" onclick="startRebindHotkey('hit', this)">A</button>
+        </div>
+        <div class="hotkey-row">
+          <span>STAND</span>
+          <button class="hotkey-bind-btn" id="bind-btn-stand" onclick="startRebindHotkey('stand', this)">S</button>
+        </div>
+        <div class="hotkey-row">
+          <span>SPLIT</span>
+          <button class="hotkey-bind-btn" id="bind-btn-split" onclick="startRebindHotkey('split', this)">D</button>
+        </div>
+        <div class="hotkey-row">
+          <span>DOUBLE (DD)</span>
+          <button class="hotkey-bind-btn" id="bind-btn-dd" onclick="startRebindHotkey('dd', this)">F</button>
+        </div>
+        <div class="hotkey-row">
+          <span>INSURANCE</span>
+          <button class="hotkey-bind-btn" id="bind-btn-insurance" onclick="startRebindHotkey('insurance', this)">G</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 4px;">
+        <button class="pixel-btn btn-slate" style="font-size: 8px; padding: 8px 10px;" onclick="resetDefaultHotkeys()">
+          RESET DEFAULTS
+        </button>
+        <button class="pixel-btn btn-gold" style="font-size: 8px; padding: 8px 10px;" onclick="closeHotkeysModal()">
+          DONE
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
        FORTUNE COOKIE POPUP MODAL
@@ -849,7 +1049,20 @@
     const TWITCH_CLIENT_ID = '1vydppdg2bnlaka3zmzbm441oqgwb6';
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwODUpD2NufazfcPFiDVnKVaUDCZ5x1jS4ACTpCmCZrSjsXtEhLus9A8KN-3GBAWNuH/exec';
 
+    const DEFAULT_HOTKEYS = {
+      deal: 'Space',
+      hit: 'KeyA',
+      stand: 'KeyS',
+      split: 'KeyD',
+      dd: 'KeyF',
+      insurance: 'KeyG'
+    };
+
     let soundEnabled = true;
+    let animationsEnabled = true;
+    let isBusyAnimating = false;
+    let hotkeys = { ...DEFAULT_HOTKEYS };
+    let rebindingAction = null;
     let audioCtx = null;
 
     function getLocalDayString() {
@@ -858,6 +1071,25 @@
       const m = String(now.getMonth() + 1).padStart(2, '0');
       const d = String(now.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
+    }
+
+    function formatKeyCodeLabel(code) {
+      if (!code) return '?';
+      if (code === 'Space') return 'SPACE';
+      if (code.startsWith('Key')) return code.slice(3).toUpperCase();
+      if (code.startsWith('Digit')) return code.slice(5);
+      if (code === 'ArrowUp') return 'UP';
+      if (code === 'ArrowDown') return 'DOWN';
+      if (code === 'ArrowLeft') return 'LEFT';
+      if (code === 'ArrowRight') return 'RIGHT';
+      if (code === 'ShiftLeft' || code === 'ShiftRight') return 'SHIFT';
+      if (code === 'ControlLeft' || code === 'ControlRight') return 'CTRL';
+      if (code === 'AltLeft' || code === 'AltRight') return 'ALT';
+      return code.toUpperCase();
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     function initAudio() {
@@ -888,9 +1120,44 @@
       } catch (e) {}
     }
 
+    function playCardDealSound() {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const duration = 0.055;
+        const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          const env = Math.pow(1 - i / bufferSize, 2.2);
+          data[i] = (Math.random() * 2 - 1) * env;
+        }
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1600, audioCtx.currentTime);
+        filter.Q.setValueAtTime(1.4, audioCtx.currentTime);
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start();
+
+        playTone(360, 0.035, 'triangle', 0);
+      } catch (e) {}
+    }
+
     const sfx = {
       chip: () => playTone(660, 0.06, 'square'),
-      card: () => { playTone(320, 0.05, 'triangle'); playTone(480, 0.05, 'triangle', 0.04); },
+      card: () => playCardDealSound(),
       win: () => {
         playTone(523.25, 0.09, 'square', 0);
         playTone(659.25, 0.09, 'square', 0.09);
@@ -904,10 +1171,96 @@
       click: () => playTone(440, 0.04, 'square')
     };
 
+    function syncOptionButtonsUI() {
+      const soundBtn = document.getElementById('btn-sound');
+      if (soundBtn) soundBtn.textContent = soundEnabled ? 'SFX:ON' : 'SFX:OFF';
+
+      const animBtn = document.getElementById('btn-toggle-anim');
+      if (animBtn) {
+        animBtn.textContent = animationsEnabled ? 'ANIM:ON' : 'ANIM:OFF';
+        animBtn.className = `pixel-btn ${animationsEnabled ? 'btn-green' : 'btn-slate'}`;
+      }
+
+      const isGuest = (state.username === 'GUEST');
+      const modalSyncBtn = document.getElementById('btn-modal-sync');
+      const syncDesc = document.getElementById('options-sync-desc');
+      if (modalSyncBtn) modalSyncBtn.disabled = isGuest || isBusyAnimating;
+      if (syncDesc) {
+        syncDesc.textContent = isGuest
+          ? 'LOGIN WITH TWITCH TO USE CLOUD SYNC'
+          : 'SYNC CHIPS & STATS WITH SHEET';
+      }
+
+      Object.keys(DEFAULT_HOTKEYS).forEach(actionKey => {
+        const bindBtn = document.getElementById(`bind-btn-${actionKey}`);
+        if (bindBtn && rebindingAction !== actionKey) {
+          bindBtn.textContent = formatKeyCodeLabel(hotkeys[actionKey]);
+          bindBtn.classList.remove('listening');
+        }
+      });
+    }
+
     function toggleSound() {
       soundEnabled = !soundEnabled;
-      document.getElementById('btn-sound').textContent = soundEnabled ? 'SFX:ON' : 'SFX:OFF';
+      syncOptionButtonsUI();
+      saveStateAndDatabase();
       if (soundEnabled) sfx.click();
+    }
+
+    function toggleAnimations() {
+      animationsEnabled = !animationsEnabled;
+      syncOptionButtonsUI();
+      saveStateAndDatabase();
+      if (soundEnabled) sfx.click();
+    }
+
+    function openOptionsModal() {
+      if (isBusyAnimating) return;
+      hideHotkeyTooltip();
+      sfx.click();
+      syncOptionButtonsUI();
+      document.getElementById('options-modal').classList.add('open');
+    }
+
+    function closeOptionsModal() {
+      closeHotkeysModal();
+      sfx.click();
+      document.getElementById('options-modal').classList.remove('open');
+    }
+
+    function openHotkeysModal() {
+      if (isBusyAnimating) return;
+      hideHotkeyTooltip();
+      sfx.click();
+      rebindingAction = null;
+      document.getElementById('hotkey-editor-status').textContent = 'CLICK A KEY SLOT AND PRESS ANY KEY TO REBIND.';
+      syncOptionButtonsUI();
+      document.getElementById('hotkeys-modal').classList.add('open');
+    }
+
+    function closeHotkeysModal() {
+      rebindingAction = null;
+      syncOptionButtonsUI();
+      document.getElementById('hotkeys-modal').classList.remove('open');
+    }
+
+    function startRebindHotkey(actionKey, btnEl) {
+      if (isBusyAnimating) return;
+      sfx.click();
+      rebindingAction = actionKey;
+      syncOptionButtonsUI();
+      btnEl.classList.add('listening');
+      btnEl.textContent = 'PRESS KEY...';
+      document.getElementById('hotkey-editor-status').textContent = `PRESS A KEY FOR ${actionKey.toUpperCase()} (ESC TO CANCEL)...`;
+    }
+
+    function resetDefaultHotkeys() {
+      sfx.click();
+      rebindingAction = null;
+      hotkeys = { ...DEFAULT_HOTKEYS };
+      document.getElementById('hotkey-editor-status').textContent = 'RESET TO DEFAULT HOTKEYS.';
+      syncOptionButtonsUI();
+      saveStateAndDatabase();
     }
 
     const SUIT_SVGS = {
@@ -950,8 +1303,15 @@
           state = { ...state, ...parsed, game: null };
           if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
           if (!state.history) state.history = [];
+          if (typeof parsed.animationsEnabled === 'boolean') animationsEnabled = parsed.animationsEnabled;
+          if (typeof parsed.soundEnabled === 'boolean') soundEnabled = parsed.soundEnabled;
+          if (parsed.hotkeys && typeof parsed.hotkeys === 'object') {
+            hotkeys = { ...DEFAULT_HOTKEYS, ...parsed.hotkeys };
+          }
         }
       } catch (e) { console.error(e); }
+
+      syncOptionButtonsUI();
 
       if (window.location.hash && window.location.hash.includes('access_token=')) {
         const params = new URLSearchParams(window.location.hash.substring(1));
@@ -980,7 +1340,10 @@
           lastDaily: state.lastDaily,
           lastFortune: state.lastFortune,
           stats: state.stats,
-          history: state.history
+          history: state.history,
+          animationsEnabled,
+          soundEnabled,
+          hotkeys
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 
@@ -994,6 +1357,7 @@
     }
 
     function loginWithTwitch() {
+      if (isBusyAnimating) return;
       sfx.click();
       const redirectUri = "https://theoinnit.github.io/twitch-blackjack-webversion/";
       const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(TWITCH_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=user:read:email`;
@@ -1001,6 +1365,7 @@
     }
 
     function logoutTwitch() {
+      if (isBusyAnimating) return;
       sfx.click();
       state.username = 'GUEST';
       state.twitchToken = '';
@@ -1030,6 +1395,9 @@
           saveStateAndDatabase();
           renderUI();
           setBanner(`TWITCH VERIFIED: WELCOME @${state.username}!`, "win");
+        } else {
+          renderUI();
+          setBanner("COULD NOT LOAD TWITCH PROFILE. TRY LOGGING IN AGAIN.", "lose");
         }
       } catch (err) {
         console.error('Twitch Helix fetch error:', err);
@@ -1058,7 +1426,7 @@
     }
 
     async function manualSyncWallet() {
-      if (state.game || state.username === 'GUEST') return;
+      if (state.game || isBusyAnimating || state.username === 'GUEST') return;
       sfx.click();
       setBanner("SYNCING WALLET WITH SHEET...", "");
       const ok = await syncWalletDataFromSheet(state.username);
@@ -1109,7 +1477,7 @@
     }
 
     function addBet(amount) {
-      if (state.game) return;
+      if (state.game || isBusyAnimating) return;
       sfx.chip();
       state.currentBet = Math.min(state.points, state.currentBet + amount);
       saveStateAndDatabase();
@@ -1117,7 +1485,7 @@
     }
 
     function applyCustomBet() {
-      if (state.game) return;
+      if (state.game || isBusyAnimating) return;
       const inputEl = document.getElementById('custom-bet-input');
       const rawVal = parseInt(inputEl.value, 10);
 
@@ -1147,7 +1515,7 @@
     }
 
     function clearBet() {
-      if (state.game) return;
+      if (state.game || isBusyAnimating) return;
       sfx.click();
       state.currentBet = 0;
       const inputEl = document.getElementById('custom-bet-input');
@@ -1157,15 +1525,15 @@
     }
 
     function maxBet() {
-      if (state.game) return;
+      if (state.game || isBusyAnimating) return;
       sfx.chip();
       state.currentBet = state.points;
       saveStateAndDatabase();
       renderUI();
     }
 
-    function startGame() {
-      if (state.game) return;
+    async function startGame() {
+      if (state.game || isBusyAnimating) return;
       const bet = state.currentBet;
       if (bet <= 0) {
         setBanner("SELECT A BET AMOUNT FIRST!", "lose");
@@ -1179,19 +1547,71 @@
       }
 
       hideHotkeyTooltip();
-      sfx.card();
       state.points -= bet;
 
       const deck = createDeck();
-      const playerHand = [deck.pop(), deck.pop()];
-      const dealerHand = [deck.pop(), deck.pop()];
-      const pScore = calcScore(playerHand);
+      const pCard1 = deck.pop();
+      const dCard1 = deck.pop();
+      const pCard2 = deck.pop();
+      const dCard2 = deck.pop();
+
+      state.game = {
+        deck,
+        hands: [[]],
+        bets: [bet],
+        activeHandIndex: 0,
+        dealer: [],
+        isSplit: false,
+        hasInsurance: false,
+        insuranceCost: 0,
+        revealed: false
+      };
+
+      if (!animationsEnabled) {
+        state.game.hands = [[pCard1, pCard2]];
+        state.game.dealer = [dCard1, dCard2];
+        sfx.card();
+        finishInitialDeal(bet);
+        return;
+      }
+
+      isBusyAnimating = true;
+      updateControlsVisibility(false);
+      document.getElementById('betting-controls').style.display = 'none';
+      setBanner("DEALING CARDS...", "");
+
+      state.game.hands[0].push(pCard1);
+      sfx.card();
+      renderUI({ animatePlayerIdx: 0, animatePlayerCardIdx: 0 });
+      await sleep(160);
+
+      state.game.dealer.push(dCard1);
+      sfx.card();
+      renderUI({ animateDealerCardIdx: 0 });
+      await sleep(160);
+
+      state.game.hands[0].push(pCard2);
+      sfx.card();
+      renderUI({ animatePlayerIdx: 0, animatePlayerCardIdx: 1 });
+      await sleep(160);
+
+      state.game.dealer.push(dCard2);
+      sfx.card();
+      renderUI({ animateDealerCardIdx: 1 });
+      await sleep(140);
+
+      isBusyAnimating = false;
+      finishInitialDeal(bet);
+    }
+
+    function finishInitialDeal(bet) {
+      const g = state.game;
+      const pScore = calcScore(g.hands[0]);
 
       if (pScore === 21) {
         const payout = Math.floor(bet * 2.5);
         state.points += payout;
 
-        // Record Natural Blackjack Stat Update
         if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
         state.stats.totalHands += 1;
         state.stats.wins += 1;
@@ -1202,17 +1622,7 @@
         state.history.unshift(logMsg);
         if (state.history.length > 20) state.history.pop();
 
-        state.game = {
-          deck,
-          hands: [playerHand],
-          bets: [bet],
-          activeHandIndex: 0,
-          dealer: dealerHand,
-          isSplit: false,
-          hasInsurance: false,
-          insuranceCost: 0,
-          revealed: true
-        };
+        g.revealed = true;
         sfx.win();
         setBanner(`BLACKJACK! NATURAL 21! YOU WON +${payout} CHIPS!`, "blackjack");
         saveStateAndDatabase();
@@ -1222,33 +1632,32 @@
         return;
       }
 
-      state.game = {
-        deck,
-        hands: [playerHand],
-        bets: [bet],
-        activeHandIndex: 0,
-        dealer: dealerHand,
-        isSplit: false,
-        hasInsurance: false,
-        insuranceCost: 0,
-        revealed: false
-      };
-
-      const aceHint = dealerHand[0].v === "A" ? " DEALER SHOWS ACE — INSURANCE AVAILABLE!" : "";
+      const aceHint = g.dealer[0].v === "A" ? " DEALER SHOWS ACE — INSURANCE AVAILABLE!" : "";
       setBanner(`BET: ${bet} CHIPS. YOUR MOVE: HIT OR STAND?${aceHint}`, "");
       saveStateAndDatabase();
       renderUI();
     }
 
-    function playerHit() {
-      if (!state.game || state.game.revealed) return;
+    async function playerHit() {
+      if (!state.game || state.game.revealed || isBusyAnimating) return;
       hideHotkeyTooltip();
-      sfx.card();
       const g = state.game;
       const idx = g.activeHandIndex;
       const hand = g.hands[idx];
 
-      hand.push(g.deck.pop());
+      const drawnCard = g.deck.pop();
+      hand.push(drawnCard);
+      sfx.card();
+
+      if (animationsEnabled) {
+        isBusyAnimating = true;
+        updateControlsVisibility(false);
+        document.getElementById('betting-controls').style.display = 'none';
+        renderUI({ animatePlayerIdx: idx, animatePlayerCardIdx: hand.length - 1 });
+        await sleep(190);
+        isBusyAnimating = false;
+      }
+
       const score = calcScore(hand);
 
       if (score > 21) {
@@ -1258,13 +1667,13 @@
           setBanner(`HAND 1 BUSTED (${score})! NOW PLAYING HAND 2.`, "lose");
           renderUI();
         } else {
-          resolveAllHands();
+          await resolveAllHands();
         }
         return;
       }
 
       if (score === 21) {
-        advanceOrResolveHand();
+        await advanceOrResolveHand();
         return;
       }
 
@@ -1273,15 +1682,15 @@
       renderUI();
     }
 
-    function playerStand() {
-      if (!state.game || state.game.revealed) return;
+    async function playerStand() {
+      if (!state.game || state.game.revealed || isBusyAnimating) return;
       hideHotkeyTooltip();
       sfx.click();
-      advanceOrResolveHand();
+      await advanceOrResolveHand();
     }
 
-    function playerSplit() {
-      if (!state.game || state.game.revealed) return;
+    async function playerSplit() {
+      if (!state.game || state.game.revealed || isBusyAnimating) return;
       const g = state.game;
       if (g.isSplit) return;
 
@@ -1296,24 +1705,53 @@
       }
 
       hideHotkeyTooltip();
-      sfx.card();
       state.points -= bet;
 
-      const hand1 = [activeHand[0], g.deck.pop()];
-      const hand2 = [activeHand[1], g.deck.pop()];
+      const cardA = activeHand[0];
+      const cardB = activeHand[1];
+      const newCardA = g.deck.pop();
+      const newCardB = g.deck.pop();
 
-      g.hands = [hand1, hand2];
+      g.hands = [[cardA], [cardB]];
       g.bets = [bet, bet];
       g.isSplit = true;
       g.activeHandIndex = 0;
 
-      setBanner(`HAND SPLIT! PLAYING HAND 1 (${calcScore(hand1)}).`, "");
+      if (!animationsEnabled) {
+        g.hands[0].push(newCardA);
+        g.hands[1].push(newCardB);
+        sfx.card();
+        setBanner(`HAND SPLIT! PLAYING HAND 1 (${calcScore(g.hands[0])}).`, "");
+        saveStateAndDatabase();
+        renderUI();
+        return;
+      }
+
+      isBusyAnimating = true;
+      updateControlsVisibility(false);
+      document.getElementById('betting-controls').style.display = 'none';
+      setBanner("SPLITTING HANDS...", "");
+      renderUI();
+      await sleep(140);
+
+      g.hands[0].push(newCardA);
+      sfx.card();
+      renderUI({ animatePlayerIdx: 0, animatePlayerCardIdx: 1 });
+      await sleep(180);
+
+      g.hands[1].push(newCardB);
+      sfx.card();
+      renderUI({ animatePlayerIdx: 1, animatePlayerCardIdx: 1 });
+      await sleep(160);
+
+      isBusyAnimating = false;
+      setBanner(`HAND SPLIT! PLAYING HAND 1 (${calcScore(g.hands[0])}).`, "");
       saveStateAndDatabase();
       renderUI();
     }
 
-    function playerDoubleDown() {
-      if (!state.game || state.game.revealed) return;
+    async function playerDoubleDown() {
+      if (!state.game || state.game.revealed || isBusyAnimating) return;
       const g = state.game;
       const idx = g.activeHandIndex;
       const hand = g.hands[idx];
@@ -1332,7 +1770,20 @@
       state.points -= bet;
       g.bets[idx] *= 2;
 
-      hand.push(g.deck.pop());
+      const drawnCard = g.deck.pop();
+      hand.push(drawnCard);
+      sfx.card();
+
+      if (animationsEnabled) {
+        isBusyAnimating = true;
+        updateControlsVisibility(false);
+        document.getElementById('betting-controls').style.display = 'none';
+        setBanner("DOUBLING DOWN...", "");
+        renderUI({ animatePlayerIdx: idx, animatePlayerCardIdx: hand.length - 1 });
+        await sleep(200);
+        isBusyAnimating = false;
+      }
+
       const score = calcScore(hand);
 
       if (score > 21) {
@@ -1343,16 +1794,16 @@
           saveStateAndDatabase();
           renderUI();
         } else {
-          resolveAllHands();
+          await resolveAllHands();
         }
         return;
       }
 
-      advanceOrResolveHand();
+      await advanceOrResolveHand();
     }
 
     function playerInsurance() {
-      if (!state.game || state.game.revealed) return;
+      if (!state.game || state.game.revealed || isBusyAnimating) return;
       const g = state.game;
       if (g.dealer[0].v !== "A" || g.hasInsurance) return;
 
@@ -1374,27 +1825,45 @@
       renderUI();
     }
 
-    function advanceOrResolveHand() {
+    async function advanceOrResolveHand() {
       const g = state.game;
       if (g.isSplit && g.activeHandIndex === 0) {
         g.activeHandIndex = 1;
         setBanner(`HAND 1 LOCKED! NOW PLAYING HAND 2 (${calcScore(g.hands[1])}).`, "");
         renderUI();
       } else {
-        resolveAllHands();
+        await resolveAllHands();
       }
     }
 
-    function resolveAllHands() {
+    async function resolveAllHands() {
       const g = state.game;
-      g.revealed = true;
 
-      let dScore = calcScore(g.dealer);
-      while (dScore < 17) {
-        g.dealer.push(g.deck.pop());
-        dScore = calcScore(g.dealer);
+      if (animationsEnabled) {
+        isBusyAnimating = true;
+        updateControlsVisibility(false);
+        document.getElementById('betting-controls').style.display = 'none';
+        setBanner("DEALER REVEALS HOLE CARD...", "");
+        g.revealed = true;
+        sfx.card();
+        renderUI({ animateDealerCardIdx: 1 });
+        await sleep(260);
+
+        while (calcScore(g.dealer) < 17) {
+          g.dealer.push(g.deck.pop());
+          sfx.card();
+          renderUI({ animateDealerCardIdx: g.dealer.length - 1 });
+          await sleep(260);
+        }
+        isBusyAnimating = false;
+      } else {
+        g.revealed = true;
+        while (calcScore(g.dealer) < 17) {
+          g.dealer.push(g.deck.pop());
+        }
       }
 
+      const dScore = calcScore(g.dealer);
       const isDealerBlackjack = (g.dealer.length === 2 && dScore === 21);
       let netProfitChange = 0;
       let handWon = false;
@@ -1466,6 +1935,7 @@
     }
 
     function claimDaily() {
+      if (isBusyAnimating) return;
       const cooldownMs = 24 * 60 * 60 * 1000;
       const now = Date.now();
       if (now - state.lastDaily < cooldownMs) {
@@ -1494,6 +1964,7 @@
     }
 
     function claimFortune() {
+      if (isBusyAnimating) return;
       const cooldownMs = 6 * 60 * 60 * 1000;
       const now = Date.now();
       if (now - state.lastFortune < cooldownMs) {
@@ -1531,15 +2002,16 @@
       document.getElementById('fortune-modal').classList.remove('open');
     }
 
-    function createCardElement(card, isFaceDown = false) {
+    function createCardElement(card, isFaceDown = false, shouldAnimate = false) {
       const el = document.createElement('div');
+      const animClass = (shouldAnimate && animationsEnabled) ? ' anim-deal' : '';
       if (isFaceDown) {
-        el.className = 'pixel-card card-back';
+        el.className = `pixel-card card-back${animClass}`;
         return el;
       }
 
       const isRed = (card.s === "♥" || card.s === "♦");
-      el.className = `pixel-card ${isRed ? 'red' : 'black'}`;
+      el.className = `pixel-card ${isRed ? 'red' : 'black'}${animClass}`;
       el.innerHTML = `
         <div class="card-value">${card.v}</div>
         ${SUIT_SVGS[card.s]}
@@ -1554,12 +2026,19 @@
     }
 
     function updateControlsVisibility(isPlaying) {
+      if (isBusyAnimating) {
+        document.getElementById('betting-controls').style.display = 'none';
+        document.getElementById('gameplay-controls').style.display = 'none';
+        return;
+      }
       document.getElementById('betting-controls').style.display = isPlaying ? 'none' : 'flex';
       document.getElementById('gameplay-controls').style.display = isPlaying ? 'flex' : 'none';
       if (isPlaying) hideHotkeyTooltip();
     }
 
-    function renderUI() {
+    function renderUI(animOpts = {}) {
+      const { animateDealerCardIdx = -1, animatePlayerIdx = -1, animatePlayerCardIdx = -1 } = animOpts;
+
       document.getElementById('balance-display').textContent = state.points;
       document.getElementById('username-display').textContent = state.username;
       document.getElementById('current-bet-display').textContent = state.currentBet;
@@ -1571,10 +2050,8 @@
       const isGuest = (state.username === 'GUEST');
       document.getElementById('twitch-btn-text').textContent = isGuest ? 'LOGIN TWITCH' : `@${state.username}`;
       document.getElementById('btn-twitch-logout').style.display = isGuest ? 'none' : 'inline-flex';
-
-      // Toggle Wallet & Sync button visibility based on login status
       document.getElementById('btn-wallet').style.display = isGuest ? 'none' : 'inline-flex';
-      document.getElementById('btn-sync').style.display = isGuest ? 'none' : 'inline-flex';
+      syncOptionButtonsUI();
 
       const dealerCardsEl = document.getElementById('dealer-cards');
       const dealerScoreEl = document.getElementById('dealer-score');
@@ -1585,8 +2062,8 @@
 
       if (!state.game) {
         dealerScoreEl.textContent = '?';
-        dealerCardsEl.appendChild(createCardElement(null, true));
-        dealerCardsEl.appendChild(createCardElement(null, true));
+        dealerCardsEl.appendChild(createCardElement(null, true, false));
+        dealerCardsEl.appendChild(createCardElement(null, true, false));
 
         const slot = document.createElement('div');
         slot.className = 'hand-slot';
@@ -1612,15 +2089,20 @@
       }
 
       const g = state.game;
-      updateControlsVisibility(!g.revealed);
+      updateControlsVisibility(!g.revealed && !isBusyAnimating);
 
       g.dealer.forEach((card, idx) => {
         const hideHoleCard = (!g.revealed && idx === 1);
-        dealerCardsEl.appendChild(createCardElement(card, hideHoleCard));
+        const shouldAnim = (idx === animateDealerCardIdx);
+        dealerCardsEl.appendChild(createCardElement(card, hideHoleCard, shouldAnim));
       });
 
-      if (g.revealed) {
+      if (g.dealer.length === 0) {
+        dealerScoreEl.textContent = '?';
+      } else if (g.revealed) {
         dealerScoreEl.textContent = calcScore(g.dealer);
+      } else if (g.dealer.length === 1) {
+        dealerScoreEl.textContent = calcScore([g.dealer[0]]) + " + ?";
       } else {
         dealerScoreEl.textContent = calcScore([g.dealer[0]]) + " + ?";
       }
@@ -1643,14 +2125,17 @@
 
         const cardsRow = document.createElement('div');
         cardsRow.className = 'cards-row';
-        hand.forEach(c => cardsRow.appendChild(createCardElement(c, false)));
+        hand.forEach((c, cIdx) => {
+          const shouldAnim = (idx === animatePlayerIdx && cIdx === animatePlayerCardIdx);
+          cardsRow.appendChild(createCardElement(c, false, shouldAnim));
+        });
 
         slot.appendChild(header);
         slot.appendChild(cardsRow);
         playerContainerEl.appendChild(slot);
       });
 
-      if (!g.revealed) {
+      if (!g.revealed && !isBusyAnimating && g.hands[g.activeHandIndex] && g.hands[g.activeHandIndex].length > 0) {
         const activeHand = g.hands[g.activeHandIndex];
         const activeBet = g.bets[g.activeHandIndex];
         const activeScore = calcScore(activeHand);
@@ -1660,13 +2145,12 @@
           activeHand[0].v === activeHand[1].v &&
           state.points >= activeBet;
 
-        // STRICT DOUBLE DOWN RULE: Must be exactly 2 cards, total score must be 9, 10, or 11, and player must have enough chips
         const canDD = activeHand.length === 2 &&
           [9, 10, 11].includes(activeScore) &&
           state.points >= activeBet;
 
         const insCost = Math.floor(g.bets[0] / 2);
-        const canIns = g.dealer[0].v === "A" && !g.hasInsurance && state.points >= insCost;
+        const canIns = g.dealer[0] && g.dealer[0].v === "A" && !g.hasInsurance && state.points >= insCost;
 
         document.getElementById('btn-split').disabled = !canSplit;
         document.getElementById('btn-dd').disabled = !canDD;
@@ -1675,7 +2159,7 @@
     }
 
     // ========================================================================
-    // 3-SECOND CURSOR TOOLTIP & MAIN BUTTON HOTKEYS
+    // 3-SECOND CURSOR TOOLTIP & CUSTOMIZABLE MAIN BUTTON HOTKEYS
     // ========================================================================
     let hoverTimer = null;
     let lastMouseX = 0;
@@ -1708,13 +2192,14 @@
     }
 
     function setupMainButtonHoverTooltips() {
-      const mainButtons = document.querySelectorAll('[data-hotkey]');
+      const mainButtons = document.querySelectorAll('[data-hotkey-action]');
       mainButtons.forEach(btn => {
         btn.addEventListener('mouseenter', (e) => {
           hideHotkeyTooltip();
           lastMouseX = e.clientX;
           lastMouseY = e.clientY;
-          const keyLabel = btn.getAttribute('data-hotkey');
+          const actionKey = btn.getAttribute('data-hotkey-action');
+          const keyLabel = formatKeyCodeLabel(hotkeys[actionKey]);
           hoverTimer = setTimeout(() => {
             if (!btn.matches(':hover') || btn.disabled) return;
             const tip = document.getElementById('hotkey-tooltip');
@@ -1739,17 +2224,47 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+
+      if (rebindingAction) {
+        e.preventDefault();
+        if (e.code === 'Escape') {
+          rebindingAction = null;
+          document.getElementById('hotkey-editor-status').textContent = 'REBIND CANCELLED.';
+          syncOptionButtonsUI();
+          return;
+        }
+        const reservedCodes = ['Enter', 'Tab', 'MetaLeft', 'MetaRight'];
+        if (reservedCodes.includes(e.code)) {
+          document.getElementById('hotkey-editor-status').textContent = `${formatKeyCodeLabel(e.code)} IS RESERVED. PICK ANOTHER KEY.`;
+          return;
+        }
+
+        const previousOwner = Object.keys(hotkeys).find(k => k !== rebindingAction && hotkeys[k] === e.code);
+        if (previousOwner) {
+          hotkeys[previousOwner] = hotkeys[rebindingAction];
+        }
+        hotkeys[rebindingAction] = e.code;
+        const boundName = rebindingAction.toUpperCase();
+        rebindingAction = null;
+        document.getElementById('hotkey-editor-status').textContent = `${boundName} SET TO ${formatKeyCodeLabel(e.code)}.`;
+        sfx.click();
+        syncOptionButtonsUI();
+        saveStateAndDatabase();
+        return;
+      }
+
       const active = document.activeElement;
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
         return;
       }
-      const modalOpen = document.getElementById('fortune-modal').classList.contains('open');
-      if (modalOpen) return;
+
+      const anyModalOpen = document.querySelector('.modal-backdrop.open');
+      if (anyModalOpen) return;
+      if (isBusyAnimating) return;
 
       const code = e.code;
-      const key = (e.key || '').toLowerCase();
 
-      if (code === 'Space') {
+      if (code === hotkeys.deal) {
         const dealBtn = document.getElementById('btn-deal');
         if (!state.game && dealBtn && !dealBtn.disabled && dealBtn.offsetParent !== null) {
           e.preventDefault();
@@ -1760,19 +2275,21 @@
 
       if (!state.game || state.game.revealed) return;
 
-      if (key === 'a') {
+      if (code === 'Space') e.preventDefault();
+
+      if (code === hotkeys.hit) {
         const hitBtn = document.getElementById('btn-hit');
         if (hitBtn && !hitBtn.disabled) hitBtn.click();
-      } else if (key === 's') {
+      } else if (code === hotkeys.stand) {
         const standBtn = document.getElementById('btn-stand');
         if (standBtn && !standBtn.disabled) standBtn.click();
-      } else if (key === 'd') {
+      } else if (code === hotkeys.split) {
         const splitBtn = document.getElementById('btn-split');
         if (splitBtn && !splitBtn.disabled) splitBtn.click();
-      } else if (key === 'f') {
+      } else if (code === hotkeys.dd) {
         const ddBtn = document.getElementById('btn-dd');
         if (ddBtn && !ddBtn.disabled) ddBtn.click();
-      } else if (key === 'g') {
+      } else if (code === hotkeys.insurance) {
         const insBtn = document.getElementById('btn-insurance');
         if (insBtn && !insBtn.disabled) insBtn.click();
       }
