@@ -390,6 +390,7 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
+  height: 64px;
 }
 
 .chip-8bit-svg {
