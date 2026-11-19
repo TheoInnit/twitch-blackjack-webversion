@@ -483,27 +483,27 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
-.bet-input-stack {
+.bet-controls-cluster {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* 2x2 Keypad Grid: MAX | 1/2 on top, MIN | CLEAR below, uniform width = CLEAR */
+/* 2x2 Keypad Grid: MAX | 1/2 on top, MIN | CLEAR below, equal width = CLEAR */
 .quick-bet-keypad {
   display: grid;
-  grid-template-columns: repeat(2, max-content);
+  grid-template-columns: repeat(2, minmax(78px, 1fr));
   gap: 6px;
 }
 
 .quick-bet-keypad .pixel-btn {
   width: 100%;
-  min-width: 74px;
   font-size: 8px;
   padding: 6px 10px;
   border-width: 3px;
@@ -559,8 +559,8 @@ body {
 .btn-deal-aligned {
   font-size: 12px !important;
   padding: 11px 16px !important;
-  width: 272px;
-  max-width: 100%;
+  width: 272px !important;
+  max-width: 100% !important;
 }
 
 .action-buttons-row {
