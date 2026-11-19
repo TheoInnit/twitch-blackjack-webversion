@@ -373,7 +373,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  transform: translateY(11px);
+  transform: translateY(-4px);
 }
 
 .chip-pair-container {
