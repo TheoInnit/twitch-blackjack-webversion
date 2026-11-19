@@ -98,7 +98,7 @@
             <!-- Player hand slots render here -->
           </div>
           <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting circles">
-            <!-- Isometric cylindrical chip stacks & white betting circles render here -->
+            <!-- 8-bit cylindrical chip stacks & stepped white bet circles render here -->
           </div>
         </section>
 
@@ -485,17 +485,17 @@
     };
 
     // ========================================================================
-    // ISOMETRIC CYLINDRICAL CHIP STACKS (SVG) & WHITE BETTING CIRCLES
+    // 8-BIT STEPPED CYLINDRICAL CHIP STACKS & WHITE BETTING CIRCLE
     // ========================================================================
     const CHIP_PALETTE = {
-      500: { main: '#d97706', dark: '#92400e', light: '#fbbf24', stripe: '#fef3c7' },
-      250: { main: '#9333ea', dark: '#581c87', light: '#c084fc', stripe: '#f3e8ff' },
-      100: { main: '#16a34a', dark: '#14532d', light: '#4ade80', stripe: '#dcfce7' },
-      50:  { main: '#dc2626', dark: '#7f1d1d', light: '#f87171', stripe: '#fee2e2' },
-      25:  { main: '#2563eb', dark: '#1e3a8a', light: '#60a5fa', stripe: '#dbeafe' },
-      10:  { main: '#0891b2', dark: '#164e63', light: '#22d3ee', stripe: '#cffafe' },
-      5:   { main: '#e11d48', dark: '#881337', light: '#fb7185', stripe: '#ffe4e6' },
-      1:   { main: '#64748b', dark: '#1e293b', light: '#94a3b8', stripe: '#f1f5f9' }
+      500: { main: '#d97706', dark: '#92400e', light: '#fbbf24', edge: '#fef3c7' },
+      250: { main: '#9333ea', dark: '#581c87', light: '#c084fc', edge: '#f3e8ff' },
+      100: { main: '#16a34a', dark: '#14532d', light: '#4ade80', edge: '#dcfce7' },
+      50:  { main: '#dc2626', dark: '#7f1d1d', light: '#f87171', edge: '#fee2e2' },
+      25:  { main: '#2563eb', dark: '#1e3a8a', light: '#60a5fa', edge: '#dbeafe' },
+      10:  { main: '#0891b2', dark: '#164e63', light: '#22d3ee', edge: '#cffafe' },
+      5:   { main: '#e11d48', dark: '#881337', light: '#fb7185', edge: '#ffe4e6' },
+      1:   { main: '#64748b', dark: '#1e293b', light: '#94a3b8', edge: '#f1f5f9' }
     };
 
     const CHIP_DENOMS = [
@@ -507,6 +507,21 @@
       { value: 10,  label: '10',  pal: CHIP_PALETTE[10]  },
       { value: 5,   label: '5',   pal: CHIP_PALETTE[5]   },
       { value: 1,   label: '1',   pal: CHIP_PALETTE[1]   }
+    ];
+
+    // Stepped 8-bit isometric ellipse mask (width 24, height 10 in pixel units)
+    // Returns horizontal [xStart, xEnd] runs per row y = 0..9
+    const PIXEL_CAP_ROWS = [
+      [7, 17],
+      [4, 20],
+      [2, 22],
+      [1, 23],
+      [0, 24],
+      [0, 24],
+      [1, 23],
+      [2, 22],
+      [4, 20],
+      [7, 17]
     ];
 
     function decomposeChips(amount) {
@@ -521,6 +536,52 @@
       return chips;
     }
 
+    function buildPixelDiscBody(ox, oy, pal, heightPx) {
+      // Lower half of the 8-bit ellipse (rows 5..9) extruded down by heightPx
+      // No dark outline between stacked chips; shading gives 8-bit cylinder depth
+      let rects = '';
+      for (let r = 5; r <= 9; r++) {
+        const [xs, xe] = PIXEL_CAP_ROWS[r];
+        const w = xe - xs;
+        const py = oy + r + heightPx;
+        rects += `<rect x="${ox + xs}" y="${py}" width="${w}" height="1" fill="${pal.main}" />`;
+        const leftW = Math.max(2, Math.floor(w * 0.28));
+        const rightW = Math.max(2, Math.floor(w * 0.28));
+        rects += `<rect x="${ox + xs}" y="${py}" width="${leftW}" height="1" fill="${pal.light}" opacity="0.45" />`;
+        rects += `<rect x="${ox + xe - rightW}" y="${py}" width="${rightW}" height="1" fill="${pal.dark}" opacity="0.55" />`;
+      }
+      return rects;
+    }
+
+    function buildPixelTopChipFace(ox, oy, chip) {
+      // Stepped 8-bit top face + inner casino ring + crisp denomination label
+      const pal = chip.pal;
+      let rects = '';
+      PIXEL_CAP_ROWS.forEach(([xs, xe], r) => {
+        const w = xe - xs;
+        rects += `<rect x="${ox + xs}" y="${oy + r}" width="${w}" height="1" fill="${pal.main}" />`;
+        // Casino edge stripe ticks on left & right pixel rims
+        if (r >= 2 && r <= 7) {
+          rects += `<rect x="${ox + xs + 1}" y="${oy + r}" width="2" height="1" fill="${pal.edge}" />`;
+          rects += `<rect x="${ox + xe - 3}" y="${oy + r}" width="2" height="1" fill="${pal.edge}" />`;
+        }
+      });
+
+      // Inner 8-bit casino ring
+      rects += `<rect x="${ox + 6}" y="${oy + 2}" width="12" height="1" fill="${pal.edge}" opacity="0.9" />`;
+      rects += `<rect x="${ox + 6}" y="${oy + 7}" width="12" height="1" fill="${pal.edge}" opacity="0.9" />`;
+      rects += `<rect x="${ox + 4}" y="${oy + 3}" width="2" height="4" fill="${pal.edge}" opacity="0.9" />`;
+      rects += `<rect x="${ox + 18}" y="${oy + 3}" width="2" height="4" fill="${pal.edge}" opacity="0.9" />`;
+
+      // Dark center medallion behind value text
+      rects += `<rect x="${ox + 7}" y="${oy + 3}" width="10" height="4" fill="${pal.dark}" opacity="0.65" />`;
+
+      return `
+        ${rects}
+        <text x="${ox + 12}" y="${oy + 6.4}" text-anchor="middle" fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="4.4" stroke="#09090b" stroke-width="1.2" paint-order="stroke">${chip.label}</text>
+      `;
+    }
+
     function buildChipStackHTML(amount, opts = {}) {
       const { animClass = '', badgeLabel = '' } = opts;
       if (!amount || amount <= 0) return '';
@@ -531,40 +592,23 @@
       const overflowCount = Math.max(0, chips.length - maxVisible);
       const topChip = shown[shown.length - 1] || CHIP_DENOMS[CHIP_DENOMS.length - 1];
 
-      const stepY = 5;
-      const svgW = 54;
-      const baseTopY = 24 + (shown.length - 1) * stepY;
-      const svgH = baseTopY + 18;
-      const cx = 27;
-      const rx = 18;
-      const ry = 7.5;
-      const discH = 6;
+      const stepPx = 4;
+      const sliceHeight = 4;
+      const pxW = 28;
+      const topCapY = 4;
+      const baseOriginY = topCapY + (shown.length - 1) * stepPx;
+      const pxH = baseOriginY + 10 + sliceHeight + 4;
+      const ox = 2;
 
-      // Render cylindrical discs with NO lines between stacked discs; outer silhouette outline is added via CSS drop-shadow
-      let bodySvg = '';
+      // Render cylindrical stack discs from bottom to top (no dark borders between stacked discs)
+      let stackSvg = '';
       shown.forEach((c, idx) => {
-        const y = baseTopY - idx * stepY;
-        const leftX = cx - rx;
-        const rightX = cx + rx;
-        const botY = y + discH;
-
-        // Cylindrical barrel segment (shaded left/right/bottom, no stroke between stacked discs)
-        bodySvg += `
-          <path d="M ${leftX} ${y} L ${leftX} ${botY} A ${rx} ${ry} 0 0 0 ${rightX} ${botY} L ${rightX} ${y} Z" fill="${c.pal.main}" />
-          <path d="M ${leftX} ${y} L ${leftX} ${botY} A ${rx} ${ry} 0 0 0 ${cx - 5} ${botY + 1.2} L ${cx - 5} ${y + 1.2} Z" fill="${c.pal.light}" opacity="0.38" />
-          <path d="M ${cx + 5} ${y + 1.2} L ${cx + 5} ${botY + 1.2} A ${rx} ${ry} 0 0 0 ${rightX} ${botY} L ${rightX} ${y} Z" fill="${c.pal.dark}" opacity="0.52" />
-        `;
+        const oy = baseOriginY - idx * stepPx;
+        stackSvg += buildPixelDiscBody(ox, oy, c.pal, sliceHeight);
       });
 
-      // Top face of the top chip in isometric perspective with casino rim ticks, inner ring & denomination
-      const topY = baseTopY - (shown.length - 1) * stepY;
-      const tp = topChip.pal;
-      const topFaceSvg = `
-        <ellipse cx="${cx}" cy="${topY}" rx="${rx}" ry="${ry}" fill="${tp.main}" />
-        <ellipse cx="${cx}" cy="${topY}" rx="${rx - 2.5}" ry="${ry - 1.2}" fill="none" stroke="${tp.stripe}" stroke-width="1.3" stroke-dasharray="3.2 2.4" />
-        <ellipse cx="${cx}" cy="${topY}" rx="${rx - 6.5}" ry="${ry - 3.1}" fill="${tp.dark}" opacity="0.35" stroke="${tp.light}" stroke-width="0.9" />
-        <text x="${cx}" y="${topY + 2.2}" text-anchor="middle" fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="5.2" stroke="#09090b" stroke-width="1.4" paint-order="stroke">${topChip.label}</text>
-      `;
+      // Top face chip design on top of the cylinder
+      stackSvg += buildPixelTopChipFace(ox, topCapY, topChip);
 
       const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
       const topBadge = badgeLabel ? `<span class="stack-role-tag">${badgeLabel}</span>` : '';
@@ -572,23 +616,34 @@
       return `
         <div class="chip-stack-wrap ${animClass}">
           ${topBadge}
-          <svg class="chip-cyl-svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" aria-label="${amount} chips">
-            ${bodySvg}
-            ${topFaceSvg}
+          <svg class="chip-8bit-svg" width="${pxW * 2}" height="${pxH * 2}" viewBox="0 0 ${pxW} ${pxH}" shape-rendering="crispEdges" aria-label="${amount} chips">
+            ${stackSvg}
           </svg>
           <div class="stack-amount-pill">${amount}${overflowBadge}</div>
         </div>
       `;
     }
 
-    function buildWhiteBetRingSVG(labelText, isSplitSpot = false) {
-      const w = isSplitSpot ? 104 : 124;
-      const h = 44;
+    function buildPixelBetCircleSVG(labelText, isSplitSpot = false) {
+      const w = isSplitSpot ? 44 : 54;
+      const h = 18;
+      // Stepped 8-bit white ring outline
+      const topY = 2;
+      const botY = h - 3;
+      const leftX = 6;
+      const rightX = w - 6;
+
       return `
-        <svg class="white-ring-svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-          <ellipse cx="${w / 2}" cy="${h / 2}" rx="${w / 2 - 4}" ry="${h / 2 - 4}" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.82)" stroke-width="2" stroke-dasharray="5 3" />
-          <ellipse cx="${w / 2}" cy="${h / 2}" rx="${w / 2 - 8}" ry="${h / 2 - 7}" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1" />
-          <text x="${w / 2}" y="${h / 2 + 2.5}" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-family="'Press Start 2P', monospace" font-size="6.2">${labelText}</text>
+        <svg class="pixel-ring-svg" width="${w * 2}" height="${h * 2}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">
+          <rect x="${leftX + 4}" y="${topY}" width="${rightX - leftX - 8}" height="1" fill="rgba(255,255,255,0.82)" />
+          <rect x="${leftX + 2}" y="${topY + 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
+          <rect x="${rightX - 4}" y="${topY + 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
+          <rect x="${leftX}" y="${topY + 2}" width="2" height="${botY - topY - 3}" fill="rgba(255,255,255,0.82)" />
+          <rect x="${rightX - 2}" y="${topY + 2}" width="2" height="${botY - topY - 3}" fill="rgba(255,255,255,0.82)" />
+          <rect x="${leftX + 2}" y="${botY - 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
+          <rect x="${rightX - 4}" y="${botY - 1}" width="2" height="1" fill="rgba(255,255,255,0.82)" />
+          <rect x="${leftX + 4}" y="${botY}" width="${rightX - leftX - 8}" height="1" fill="rgba(255,255,255,0.82)" />
+          ${labelText ? `<text x="${w / 2}" y="${h / 2 + 2.2}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="'Press Start 2P', monospace" font-size="3.4">${labelText}</text>` : ''}
         </svg>
       `;
     }
@@ -638,7 +693,7 @@
         stage.innerHTML = `
           <div class="bet-circle-spot is-empty">
             <div class="bet-circle-ring">
-              ${buildWhiteBetRingSVG('BET CIRCLE', false)}
+              ${buildPixelBetCircleSVG('BET', false)}
             </div>
           </div>
         `;
@@ -647,7 +702,7 @@
 
       const isSplitView = tableChipOverlay.hands.length > 1;
       const spotsHtml = tableChipOverlay.hands.map((h, idx) => {
-        const spotLabel = isSplitView ? `H${idx + 1} BET` : 'BET CIRCLE';
+        const spotLabel = isSplitView ? `H${idx + 1}` : 'BET';
         const betAnim = (h.animateBet && animationsEnabled) ? ' chip-drop-anim' : '';
         const payoutAnim = (h.animatePayout && animationsEnabled) ? ' chip-payout-side-anim' : '';
         const resolveClass = (h.resolveAnim && animationsEnabled) ? ` ${h.resolveAnim}` : '';
@@ -666,8 +721,8 @@
         return `
           <div class="bet-circle-spot ${hasChips ? 'has-chips' : 'is-empty'}">
             <div class="bet-circle-ring ${resolveClass}">
-              ${!hasChips ? buildWhiteBetRingSVG(spotLabel, isSplitView) : `
-                <div class="white-ring-backdrop">${buildWhiteBetRingSVG('', isSplitView)}</div>
+              ${!hasChips ? buildPixelBetCircleSVG(spotLabel, isSplitView) : `
+                <div class="pixel-ring-on-felt">${buildPixelBetCircleSVG('', isSplitView)}</div>
                 <div class="chip-pair-container">
                   ${betStack}
                   ${winStack}
@@ -688,7 +743,7 @@
         insHtml = `
           <div class="bet-circle-spot ins-spot has-chips">
             <div class="bet-circle-ring ins-ring ${insResolve}">
-              <div class="white-ring-backdrop">${buildWhiteBetRingSVG('', true)}</div>
+              <div class="pixel-ring-on-felt">${buildPixelBetCircleSVG('', true)}</div>
               <div class="chip-pair-container">
                 ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
               </div>
