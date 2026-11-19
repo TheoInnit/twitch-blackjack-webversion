@@ -419,7 +419,7 @@
     .status-banner.blackjack { border-color: var(--gold); color: var(--gold); }
 
     /* ==========================================================================
-       8. CONTROLS & BETTING DOCK
+       8. CONTROLS & BETTING DOCK (STABLE HEIGHT TO PREVENT LAYOUT SHIFT)
        ========================================================================== */
     .controls-dock {
       width: 100%;
@@ -433,9 +433,11 @@
     .dock-panel {
       background: #1e1b2e;
       padding: 14px;
+      min-height: 214px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 14px;
     }
 
@@ -711,6 +713,9 @@
     }
 
     @media (max-width: 640px) {
+      .dock-panel {
+        min-height: 238px;
+      }
       .pixel-card {
         width: 68px;
         height: 98px;
@@ -1324,7 +1329,6 @@
         }
       }
 
-      // AUTO-SYNC: Silently fetch fresh points and wallet data from the sheet on page load if logged in
       if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
         await syncWalletDataFromSheet(state.username);
         saveStateAndDatabase();
@@ -1347,7 +1351,6 @@
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 
-        // PUSH FULL STATS & HISTORY DIRECTLY TO GOOGLE SHEET DATABASE
         if (state.username && state.username !== 'GUEST' && GOOGLE_SCRIPT_URL) {
           const localDay = encodeURIComponent(getLocalDayString());
           const syncUrl = `${GOOGLE_SCRIPT_URL}?user=${encodeURIComponent(state.username)}&action=savestats&points=${state.points}&totalHands=${state.stats.totalHands}&wins=${state.stats.wins}&netProfit=${state.stats.netProfit}&history=${encodeURIComponent(JSON.stringify(state.history))}&localDay=${localDay}&format=json`;
@@ -1389,7 +1392,6 @@
         if (data.data && data.data[0]) {
           state.username = data.data[0].display_name.toUpperCase();
 
-          // Fetch live wallet stats & history from Google Sheet
           await syncWalletDataFromSheet(state.username);
 
           saveStateAndDatabase();
@@ -1577,7 +1579,6 @@
 
       isBusyAnimating = true;
       updateControlsVisibility(false);
-      document.getElementById('betting-controls').style.display = 'none';
       setBanner("DEALING CARDS...", "");
 
       state.game.hands[0].push(pCard1);
@@ -1652,7 +1653,6 @@
       if (animationsEnabled) {
         isBusyAnimating = true;
         updateControlsVisibility(false);
-        document.getElementById('betting-controls').style.display = 'none';
         renderUI({ animatePlayerIdx: idx, animatePlayerCardIdx: hand.length - 1 });
         await sleep(190);
         isBusyAnimating = false;
@@ -1729,7 +1729,6 @@
 
       isBusyAnimating = true;
       updateControlsVisibility(false);
-      document.getElementById('betting-controls').style.display = 'none';
       setBanner("SPLITTING HANDS...", "");
       renderUI();
       await sleep(140);
@@ -1777,7 +1776,6 @@
       if (animationsEnabled) {
         isBusyAnimating = true;
         updateControlsVisibility(false);
-        document.getElementById('betting-controls').style.display = 'none';
         setBanner("DOUBLING DOWN...", "");
         renderUI({ animatePlayerIdx: idx, animatePlayerCardIdx: hand.length - 1 });
         await sleep(200);
@@ -1842,7 +1840,6 @@
       if (animationsEnabled) {
         isBusyAnimating = true;
         updateControlsVisibility(false);
-        document.getElementById('betting-controls').style.display = 'none';
         setBanner("DEALER REVEALS HOLE CARD...", "");
         g.revealed = true;
         sfx.card();
@@ -1905,7 +1902,6 @@
         }
       });
 
-      // UPDATE STATS & HISTORY LEDGER
       if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
       state.stats.totalHands += g.hands.length;
       if (handWon) state.stats.wins++;
@@ -2025,15 +2021,28 @@
       banner.className = 'status-banner' + (typeClass ? ' ' + typeClass : '');
     }
 
+    function setGameplayButtonsLocked(locked) {
+      ['btn-hit', 'btn-stand', 'btn-split', 'btn-dd', 'btn-insurance'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn && locked) btn.disabled = true;
+      });
+    }
+
     function updateControlsVisibility(isPlaying) {
       if (isBusyAnimating) {
         document.getElementById('betting-controls').style.display = 'none';
-        document.getElementById('gameplay-controls').style.display = 'none';
+        document.getElementById('gameplay-controls').style.display = 'flex';
+        setGameplayButtonsLocked(true);
+        hideHotkeyTooltip();
         return;
       }
       document.getElementById('betting-controls').style.display = isPlaying ? 'none' : 'flex';
       document.getElementById('gameplay-controls').style.display = isPlaying ? 'flex' : 'none';
-      if (isPlaying) hideHotkeyTooltip();
+      if (isPlaying) {
+        document.getElementById('btn-hit').disabled = false;
+        document.getElementById('btn-stand').disabled = false;
+        hideHotkeyTooltip();
+      }
     }
 
     function renderUI(animOpts = {}) {
