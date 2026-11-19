@@ -288,7 +288,7 @@ body {
 }
 
 /* ==========================================================================
-   5. HAND ZONES (DEALER & PLAYER) & OVERHEAD 8-BIT BET CIRCLES + CHIPS
+   5. HAND ZONES (DEALER & PLAYER) & OVERHEAD BET CIRCLES + CHIPS
    ========================================================================== */
 .zone-container {
   display: flex;
@@ -354,7 +354,7 @@ body {
   color: #fde047;
 }
 
-/* Fixed-Height Overhead 8-Bit Betting Circles Stage (Never Shifts or Resizes) */
+/* Fixed-Height Overhead Betting Circles Stage (Never Shifts or Resizes) */
 .betting-circles-stage {
   display: flex;
   align-items: center;
@@ -362,7 +362,7 @@ body {
   gap: 18px;
   width: 100%;
   padding: 0 116px;
-  height: 86px;
+  height: 92px;
   flex-shrink: 0;
 }
 
@@ -380,12 +380,27 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
 }
 
-.pixel-ring-svg {
-  display: block;
+.perfect-bet-circle {
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow:
+    0 0 0 2px rgba(9, 9, 11, 0.45),
+    inset 0 0 0 2px rgba(9, 9, 11, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.perfect-bet-circle-label {
+  font-size: 8px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(9, 9, 11, 0.75);
+  line-height: 1;
 }
 
 .pixel-ring-on-felt {
@@ -419,7 +434,6 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
   position: relative;
 }
 
@@ -438,6 +452,7 @@ body {
   line-height: 1.1;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-top: -4px;
 }
 
 .stack-role-tag {
@@ -448,6 +463,7 @@ body {
   padding: 1px 4px;
   line-height: 1.1;
   flex-shrink: 0;
+  margin-bottom: -2px;
 }
 
 .stack-overflow {
