@@ -21,7 +21,7 @@
   --gold-dark: #b45309;
   --pixel-border: #09090b;
   --layout-max-width: 972px;
-  --layout-gutter: 14px;
+  --layout-gutter: 10px;
 }
 
 * {
@@ -57,13 +57,13 @@ body {
   box-shadow:
     inset -4px -4px 0px rgba(0, 0, 0, 0.35),
     inset 4px 4px 0px rgba(255, 255, 255, 0.18),
-    0 6px 0 var(--pixel-border);
+    0 5px 0 var(--pixel-border);
 }
 
 .pixel-btn {
   font-family: 'Press Start 2P', monospace;
   border: 4px solid var(--pixel-border);
-  padding: 12px 14px;
+  padding: 10px 12px;
   cursor: pointer;
   text-transform: uppercase;
   position: relative;
@@ -108,76 +108,98 @@ body {
 .btn-slate { background: #475569; color: #f8fafc; }
 
 /* ==========================================================================
-   3. TOP HUD HEADER BAR (STRICT EQUAL ALIGNMENT & UNIFORM BUTTONS)
+   3. TOP HUD HEADER BAR (COMPACT ABOVE-THE-FOLD & SIDE-BY-SIDE BADGE/LOGOUT)
    ========================================================================== */
 .hud-header {
   width: calc(100% - (var(--layout-gutter) * 2));
   max-width: var(--layout-max-width);
   margin: var(--layout-gutter) auto 0;
-  padding: 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   background: #1e1b2e;
   border: 4px solid var(--pixel-border);
   box-shadow:
     inset -4px -4px 0px rgba(0, 0, 0, 0.35),
     inset 4px 4px 0px rgba(255, 255, 255, 0.14),
-    0 6px 0 var(--pixel-border);
+    0 5px 0 var(--pixel-border);
 }
 
 .hud-top-row {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .brand-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 12px;
   color: var(--gold);
   text-shadow: 3px 3px 0 #000;
-  padding-top: 6px;
 }
 
 .hud-stats {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 }
 
 .stat-pill {
   background: #0f0d17;
   border: 3px solid var(--pixel-border);
-  padding: 8px 10px;
-  font-size: 10px;
-  display: flex;
+  padding: 7px 10px;
+  font-size: 9px;
+  height: 34px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
 }
 
 .stat-pill span.val {
   color: #4ade80;
 }
 
-.user-badge-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+/* Paired half-width user badge + logout button matching 1 main action slot */
+.user-session-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+  min-width: 240px;
 }
 
-.btn-logout-under {
-  font-size: 8px !important;
-  padding: 7px 10px !important;
+.user-session-pair.single-slot {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 130px;
+}
+
+.user-session-pair .stat-pill {
   width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 8px;
+}
+
+.user-session-pair .stat-pill #username-display {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-logout-beside {
+  font-size: 8px !important;
+  padding: 6px 8px !important;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
   border-width: 3px !important;
   box-shadow:
     inset -2px -2px 0px rgba(0, 0, 0, 0.4),
@@ -187,19 +209,19 @@ body {
 
 .hud-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
   width: 100%;
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 2px dashed rgba(255, 255, 255, 0.14);
 }
 
 .hud-actions .pixel-btn {
   font-size: 9px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   width: 100%;
   min-width: 0;
-  height: 38px;
+  height: 34px;
 }
 
 /* ==========================================================================
@@ -209,7 +231,6 @@ body {
   width: calc(100% - (var(--layout-gutter) * 2));
   max-width: var(--layout-max-width);
   margin: var(--layout-gutter) auto 0;
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -219,11 +240,11 @@ body {
   width: 100%;
   background: var(--wood-mid);
   border: 6px solid var(--pixel-border);
-  padding: 12px;
+  padding: 9px;
   box-shadow:
     inset -6px -6px 0 var(--wood-outer),
     inset 6px 6px 0 var(--wood-light),
-    0 10px 0 #09090b;
+    0 8px 0 #09090b;
 }
 
 .felt-surface {
@@ -237,25 +258,42 @@ body {
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
   border: 4px solid var(--pixel-border);
   box-shadow: inset 0 0 0 4px var(--felt-light);
-  padding: 18px 14px;
-  min-height: 460px;
+  padding: 12px 14px 14px;
+  min-height: 372px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  gap: 16px;
+  gap: 10px;
+}
+
+/* Chips Badge Positioned Inside Lower-Left of Felt */
+.felt-chips-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;
+  height: 30px;
+  padding: 4px 9px;
+  font-size: 9px;
+  background: rgba(15, 13, 23, 0.92);
+  border: 3px solid var(--pixel-border);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.1),
+    0 3px 0 rgba(0, 0, 0, 0.55);
+  pointer-events: none;
 }
 
 .felt-watermark {
   text-align: center;
-  font-size: 9px;
+  font-size: 8px;
   color: rgba(255, 255, 255, 0.35);
-  letter-spacing: 1px;
-  line-height: 1.6;
+  letter-spacing: 0.8px;
+  line-height: 1.5;
   border-top: 2px dashed rgba(255, 255, 255, 0.2);
   border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
-  padding: 6px 0;
-  margin: 2px auto;
+  padding: 4px 0;
+  margin: 0 auto;
   max-width: 540px;
 }
 
@@ -266,14 +304,14 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .zone-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 10px;
   text-shadow: 2px 2px 0 #000;
 }
 
@@ -281,8 +319,8 @@ body {
   background: #09090b;
   color: var(--gold);
   border: 3px solid #fff;
-  padding: 4px 8px;
-  font-size: 10px;
+  padding: 3px 7px;
+  font-size: 9px;
 }
 
 .cards-row {
@@ -290,24 +328,26 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  min-height: 126px;
+  gap: 10px;
+  min-height: 106px;
 }
 
+/* Side & bottom clearance so split/doubled hands stay clear of lower-left chips badge */
 .player-hands-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 20px;
+  gap: 14px;
   width: 100%;
+  padding: 0 116px 32px;
 }
 
 .hand-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 6px;
+  padding: 6px 10px;
   border: 4px solid transparent;
   transition: all 0.1s steps(1);
 }
@@ -318,9 +358,9 @@ body {
 }
 
 .bet-tag {
-  font-size: 9px;
+  font-size: 8px;
   background: rgba(0, 0, 0, 0.65);
-  padding: 4px 8px;
+  padding: 3px 7px;
   border: 2px solid #000;
   color: #fde047;
 }
@@ -344,8 +384,8 @@ body {
 }
 
 .pixel-card {
-  width: 84px;
-  height: 118px;
+  width: 74px;
+  height: 104px;
   background-color: var(--card-bg);
   border: 4px solid var(--pixel-border);
   box-shadow:
@@ -356,7 +396,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   position: relative;
   opacity: 1;
 }
@@ -374,15 +414,15 @@ body {
 }
 
 .card-value {
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1;
   letter-spacing: -1px;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
 }
 
 .card-suit-svg {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   display: block;
   shape-rendering: crispEdges;
 }
@@ -410,11 +450,11 @@ body {
   border: 4px solid #ffffff;
   box-shadow:
     0 0 0 4px #09090b,
-    0 6px 0 rgba(0, 0, 0, 0.5);
-  padding: 12px 16px;
+    0 5px 0 rgba(0, 0, 0, 0.5);
+  padding: 9px 14px;
   text-align: center;
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 10px;
+  line-height: 1.5;
   color: #f8fafc;
   max-width: 760px;
   width: 100%;
@@ -426,7 +466,7 @@ body {
 .status-banner.blackjack { border-color: var(--gold); color: var(--gold); }
 
 /* ==========================================================================
-   8. CONTROLS & BETTING DOCK (STABLE HEIGHT TO PREVENT LAYOUT SHIFT)
+   8. CONTROLS & BETTING DOCK (STABLE HEIGHT & ABOVE-THE-FOLD FIT)
    ========================================================================== */
 .controls-dock {
   width: calc(100% - (var(--layout-gutter) * 2));
@@ -434,19 +474,19 @@ body {
   margin: var(--layout-gutter) auto 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dock-panel {
   width: 100%;
   background: #1e1b2e;
-  padding: 14px;
-  min-height: 214px;
+  padding: 10px 14px;
+  min-height: 172px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .chip-row {
@@ -454,14 +494,14 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pixel-chip {
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  width: 58px;
-  height: 58px;
+  font-size: 9px;
+  width: 48px;
+  height: 48px;
   border: 4px solid #09090b;
   cursor: pointer;
   display: flex;
@@ -501,7 +541,7 @@ body {
 
 .action-buttons-row .pixel-btn {
   font-size: 11px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   min-width: 120px;
 }
 
@@ -514,29 +554,29 @@ body {
   box-shadow:
     inset -4px -4px 0px rgba(0, 0, 0, 0.35),
     inset 4px 4px 0px rgba(255, 255, 255, 0.14),
-    0 6px 0 var(--pixel-border);
+    0 5px 0 var(--pixel-border);
   width: calc(100% - (var(--layout-gutter) * 2));
   max-width: var(--layout-max-width);
-  margin: var(--layout-gutter) auto 12px;
-  padding: 12px 16px;
+  margin: var(--layout-gutter) auto 8px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 10px;
+  gap: 6px;
+  font-size: 9px;
   color: var(--twitch-light);
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .channel-promo code {
   background: #0f0d17;
   border: 2px solid var(--twitch-purple);
   color: var(--gold);
-  padding: 4px 8px;
+  padding: 3px 7px;
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: 9px;
   display: inline-block;
 }
 
@@ -549,7 +589,7 @@ body {
    10. FOOTER, MODALS, SLIDER TOGGLES & PIXEL HOTKEY TOOLTIP
    ========================================================================== */
 .page-footer {
-  padding: 10px 0 20px;
+  padding: 8px 0 18px;
   font-size: 9px;
   color: rgba(255, 255, 255, 0.45);
   text-align: center;
@@ -749,9 +789,9 @@ body {
 
 .bet-input {
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  width: 110px;
-  padding: 8px 10px;
+  font-size: 9px;
+  width: 96px;
+  padding: 7px 8px;
   background: #09090b;
   color: var(--gold);
   border: 4px solid #475569;
@@ -798,27 +838,36 @@ body {
   margin-left: 4px;
 }
 
+@media (max-width: 760px) {
+  .player-hands-grid {
+    padding: 0 8px 42px;
+  }
+}
+
 @media (max-width: 640px) {
   .brand-title {
     font-size: 11px;
+  }
+  .user-session-pair {
+    width: 100%;
   }
   .hud-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .dock-panel {
-    min-height: 238px;
+    min-height: 196px;
   }
   .pixel-card {
-    width: 68px;
-    height: 98px;
+    width: 64px;
+    height: 92px;
     gap: 6px;
   }
   .card-value {
-    font-size: 18px;
+    font-size: 17px;
   }
   .card-suit-svg {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
   .action-buttons-row .pixel-btn {
     min-width: 105px;
