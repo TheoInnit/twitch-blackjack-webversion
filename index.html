@@ -29,25 +29,12 @@
       </div>
 
       <div class="hud-stats">
-        <div class="stat-pill">
-          <!-- Circular Pixel Poker Chip Icon -->
-          <svg width="14" height="14" viewBox="0 0 11 11">
-            <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
-            <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
-            <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
-            <rect x="5" y="8" width="1" height="2" fill="#09090b"/>
-            <rect x="1" y="5" width="2" height="1" fill="#09090b"/>
-            <rect x="8" y="5" width="2" height="1" fill="#09090b"/>
-          </svg>
-          <span>CHIPS:</span>
-          <span class="val" id="balance-display">1000</span>
-        </div>
-        <div class="user-badge-stack">
+        <div class="user-session-pair single-slot" id="user-session-pair">
           <div class="stat-pill" id="user-badge">
             <span style="color:#c084fc;">@</span>
             <span id="username-display">GUEST</span>
           </div>
-          <button class="pixel-btn btn-red btn-logout-under" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
+          <button class="pixel-btn btn-red btn-logout-beside" id="btn-twitch-logout" onclick="logoutTwitch()" style="display: none;" title="Logout">
             LOGOUT
           </button>
         </div>
@@ -74,6 +61,7 @@
       </button>
     </div>
   </header>
+
   <!-- ========================================================================
        MAIN CASINO TABLE
        ======================================================================== -->
@@ -97,7 +85,7 @@
           <div class="felt-watermark">
             TWITCH CHAT BLACKJACK &bull; DEALER STANDS ON ALL 17s &bull; INSURANCE PAYS 2 TO 1
           </div>
-          <div class="status-banner" id="status-banner" style="margin-top: 10px;">
+          <div class="status-banner" id="status-banner" style="margin-top: 8px;">
             PLACE YOUR BET BELOW AND PRESS DEAL TO START!
           </div>
         </div>
@@ -108,6 +96,21 @@
             <!-- Player hand slots render here -->
           </div>
         </section>
+
+        <!-- LOWER-LEFT CHIPS DISPLAY INSIDE PLAY TABLE -->
+        <div class="stat-pill felt-chips-badge" id="chips-pill">
+          <!-- Circular Pixel Poker Chip Icon -->
+          <svg width="13" height="13" viewBox="0 0 11 11">
+            <circle cx="5.5" cy="5.5" r="5" fill="#d97706" stroke="#09090b" stroke-width="1"/>
+            <circle cx="5.5" cy="5.5" r="3" fill="#fef3c7" stroke="#b45309" stroke-width="1"/>
+            <rect x="5" y="1" width="1" height="2" fill="#09090b"/>
+            <rect x="5" y="8" width="1" height="2" fill="#09090b"/>
+            <rect x="1" y="5" width="2" height="1" fill="#09090b"/>
+            <rect x="8" y="5" width="2" height="1" fill="#09090b"/>
+          </svg>
+          <span>CHIPS:</span>
+          <span class="val" id="balance-display">1000</span>
+        </div>
 
       </div>
     </div>
@@ -120,7 +123,7 @@
     <div class="dock-panel pixel-box">
 
       <!-- BETTING CONTROLS -->
-      <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+      <div id="betting-controls" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;">
           <span style="font-size: 11px; color: var(--gold);">CURRENT BET: <span id="current-bet-display">50</span> CHIPS</span>
           <div class="custom-bet-group">
@@ -139,7 +142,7 @@
           <button class="pixel-chip chip-500" onclick="addBet(500)">+500</button>
         </div>
 
-        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 14px 32px;" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
+        <button class="pixel-btn btn-green" style="font-size: 13px; padding: 12px 32px;" id="btn-deal" data-hotkey-action="deal" onclick="startGame()">
           DEAL HAND
         </button>
       </div>
@@ -1351,6 +1354,10 @@
       }
 
       const isGuest = (state.username === 'GUEST');
+      const sessionPair = document.getElementById('user-session-pair');
+      if (sessionPair) {
+        sessionPair.classList.toggle('single-slot', isGuest);
+      }
       document.getElementById('btn-twitch-login').style.display = isGuest ? 'inline-flex' : 'none';
       document.getElementById('btn-twitch-logout').style.display = isGuest ? 'none' : 'inline-flex';
       document.getElementById('btn-wallet').style.display = isGuest ? 'none' : 'inline-flex';
