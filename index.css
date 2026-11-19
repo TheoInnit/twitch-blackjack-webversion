@@ -287,7 +287,7 @@ body {
 }
 
 /* ==========================================================================
-   5. HAND ZONES (DEALER & PLAYER) & WHITE BETTING CIRCLES + CYLINDER CHIPS
+   5. HAND ZONES (DEALER & PLAYER) & 8-BIT BET CIRCLES + CYLINDER CHIPS
    ========================================================================== */
 .zone-container {
   display: flex;
@@ -353,7 +353,7 @@ body {
   color: #fde047;
 }
 
-/* White Casino Betting Circles Stage */
+/* 8-Bit White Betting Circles Stage */
 .betting-circles-stage {
   display: flex;
   flex-wrap: wrap;
@@ -362,7 +362,7 @@ body {
   gap: 20px;
   width: 100%;
   padding: 4px 116px 24px;
-  min-height: 82px;
+  min-height: 78px;
 }
 
 .bet-circle-spot {
@@ -377,17 +377,18 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  min-width: 104px;
-  min-height: 44px;
+  min-width: 88px;
+  min-height: 36px;
 }
 
-.white-ring-svg {
+.pixel-ring-svg {
   display: block;
 }
 
-.white-ring-backdrop {
+/* White 8-bit bet circle directly beneath the chip stack */
+.pixel-ring-on-felt {
   position: absolute;
-  bottom: -2px;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 0;
@@ -417,15 +418,15 @@ body {
   position: relative;
 }
 
-/* Single outer black silhouette outline around the cylindrical stack */
-.chip-cyl-svg {
+/* Single outer black 8-bit silhouette outline around the cylindrical stack */
+.chip-8bit-svg {
   display: block;
   overflow: visible;
   filter:
-    drop-shadow(1.2px 0 0 #09090b)
-    drop-shadow(-1.2px 0 0 #09090b)
-    drop-shadow(0 1.2px 0 #09090b)
-    drop-shadow(0 -1.2px 0 #09090b);
+    drop-shadow(1px 0 0 #09090b)
+    drop-shadow(-1px 0 0 #09090b)
+    drop-shadow(0 1px 0 #09090b)
+    drop-shadow(0 -1px 0 #09090b);
 }
 
 .stack-amount-pill {
