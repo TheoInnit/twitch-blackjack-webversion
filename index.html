@@ -97,6 +97,9 @@
           <div class="player-hands-grid" id="player-hands-container">
             <!-- Player hand slots render here -->
           </div>
+          <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting circles">
+            <!-- Physical pixel chip stacks & betting circles render here -->
+          </div>
         </section>
 
         <!-- LOWER-LEFT CHIPS DISPLAY DIRECTLY BELOW NAME BADGE -->
@@ -367,6 +370,15 @@
     let rebindingAction = null;
     let audioCtx = null;
 
+    // Visual table chip overlay state (for smooth bet/DD/insurance/payout animations)
+    let tableChipOverlay = {
+      mode: 'idle', // 'idle' | 'prebet' | 'active' | 'resolving'
+      hands: [],     // [{ bet, payout, outcome, animateBet, animatePayout, resolveAnim }]
+      insuranceCost: 0,
+      insuranceOutcome: null,
+      animateInsurance: false
+    };
+
     function getLocalDayString() {
       const now = new Date();
       const y = now.getFullYear();
@@ -472,6 +484,166 @@
       },
       click: () => playTone(440, 0.04, 'square')
     };
+
+    // ========================================================================
+    // PHYSICAL CHIP DENOMINATIONS, STACKING & CASINO CIRCLE RENDERER
+    // ========================================================================
+    const CHIP_DENOMS = [
+      { value: 500, cls: 'denom-500', label: '500' },
+      { value: 250, cls: 'denom-250', label: '250' },
+      { value: 100, cls: 'denom-100', label: '100' },
+      { value: 50,  cls: 'denom-50',  label: '50'  },
+      { value: 25,  cls: 'denom-25',  label: '25'  },
+      { value: 10,  cls: 'denom-10',  label: '10'  },
+      { value: 5,   cls: 'denom-5',   label: '5'   },
+      { value: 1,   cls: 'denom-1',   label: '1'   }
+    ];
+
+    function decomposeChips(amount) {
+      let rem = Math.max(0, Math.floor(Number(amount) || 0));
+      const chips = [];
+      for (const d of CHIP_DENOMS) {
+        while (rem >= d.value) {
+          chips.push(d);
+          rem -= d.value;
+        }
+      }
+      return chips;
+    }
+
+    function buildChipStackHTML(amount, opts = {}) {
+      const { animClass = '', badgeLabel = '' } = opts;
+      if (!amount || amount <= 0) return '';
+      const chips = decomposeChips(amount);
+      const maxVisible = 9;
+      const shown = chips.slice(0, maxVisible);
+      const overflowCount = Math.max(0, chips.length - maxVisible);
+
+      const discsHtml = shown.map((c, idx) => {
+        const offsetY = -(idx * 4);
+        return `<div class="stack-disc ${c.cls}" style="transform: translateY(${offsetY}px); z-index: ${idx + 1};" title="${c.label} CHIPS"></div>`;
+      }).join('');
+
+      const heightPx = 24 + (shown.length - 1) * 4;
+      const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
+      const topBadge = badgeLabel ? `<span class="stack-role-tag">${badgeLabel}</span>` : '';
+
+      return `
+        <div class="chip-stack-wrap ${animClass}">
+          ${topBadge}
+          <div class="chip-stack-column" style="height: ${Math.max(24, heightPx)}px;">
+            ${discsHtml}
+          </div>
+          <div class="stack-amount-pill">${amount}${overflowBadge}</div>
+        </div>
+      `;
+    }
+
+    function syncTableChipOverlayFromGame() {
+      if (tableChipOverlay.mode === 'resolving') return;
+      if (!state.game) {
+        tableChipOverlay = {
+          mode: state.currentBet > 0 ? 'prebet' : 'idle',
+          hands: state.currentBet > 0 ? [{
+            bet: state.currentBet,
+            payout: 0,
+            outcome: null,
+            animateBet: false,
+            animatePayout: false,
+            resolveAnim: ''
+          }] : [],
+          insuranceCost: 0,
+          insuranceOutcome: null,
+          animateInsurance: false
+        };
+        return;
+      }
+
+      const g = state.game;
+      tableChipOverlay = {
+        mode: 'active',
+        hands: g.bets.map((b, i) => ({
+          bet: b,
+          payout: 0,
+          outcome: null,
+          animateBet: false,
+          animatePayout: false,
+          resolveAnim: ''
+        })),
+        insuranceCost: g.hasInsurance ? g.insuranceCost : 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
+    }
+
+    function renderBettingCircles() {
+      const stage = document.getElementById('betting-circles-stage');
+      if (!stage) return;
+
+      if (tableChipOverlay.mode === 'idle' || !tableChipOverlay.hands.length) {
+        stage.innerHTML = `
+          <div class="bet-circle-spot is-empty">
+            <div class="bet-circle-ring">
+              <span class="bet-circle-hint">BET CIRCLE</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const isSplitView = tableChipOverlay.hands.length > 1;
+      const spotsHtml = tableChipOverlay.hands.map((h, idx) => {
+        const spotLabel = isSplitView ? `H${idx + 1} BET` : 'BET CIRCLE';
+        const betAnim = (h.animateBet && animationsEnabled) ? ' chip-drop-anim' : '';
+        const payoutAnim = (h.animatePayout && animationsEnabled) ? ' chip-payout-side-anim' : '';
+        const resolveClass = (h.resolveAnim && animationsEnabled) ? ` ${h.resolveAnim}` : '';
+        const hasChips = (h.bet > 0 || h.payout > 0);
+
+        const betStack = buildChipStackHTML(h.bet, {
+          animClass: betAnim,
+          badgeLabel: h.payout > 0 ? 'BET' : ''
+        });
+
+        const winStack = h.payout > 0 ? buildChipStackHTML(h.payout, {
+          animClass: payoutAnim,
+          badgeLabel: 'WIN'
+        }) : '';
+
+        return `
+          <div class="bet-circle-spot ${hasChips ? 'has-chips' : 'is-empty'}">
+            <div class="bet-circle-ring ${resolveClass}">
+              ${!hasChips ? `<span class="bet-circle-hint">${spotLabel}</span>` : `
+                <div class="chip-pair-container">
+                  ${betStack}
+                  ${winStack}
+                </div>
+              `}
+            </div>
+            ${isSplitView ? `<div class="bet-circle-caption">HAND ${idx + 1}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      let insHtml = '';
+      if (tableChipOverlay.insuranceCost > 0) {
+        const insAnim = (tableChipOverlay.animateInsurance && animationsEnabled) ? ' chip-drop-anim' : '';
+        const insResolve = (tableChipOverlay.insuranceOutcome === 'won' && animationsEnabled)
+          ? ' chip-to-player-anim'
+          : ((tableChipOverlay.insuranceOutcome === 'lost' && animationsEnabled) ? ' chip-to-dealer-anim' : '');
+        insHtml = `
+          <div class="bet-circle-spot ins-spot has-chips">
+            <div class="bet-circle-ring ins-ring ${insResolve}">
+              <div class="chip-pair-container">
+                ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
+              </div>
+            </div>
+            <div class="bet-circle-caption">INSURANCE</div>
+          </div>
+        `;
+      }
+
+      stage.innerHTML = spotsHtml + insHtml;
+    }
 
     function applySliderState(btnEl, labelEl, enabled) {
       if (!btnEl || !labelEl) return;
@@ -784,10 +956,28 @@
       return score;
     }
 
+    function pulseBetCircleOnChange(amount) {
+      tableChipOverlay = {
+        mode: amount > 0 ? 'prebet' : 'idle',
+        hands: amount > 0 ? [{
+          bet: amount,
+          payout: 0,
+          outcome: null,
+          animateBet: true,
+          animatePayout: false,
+          resolveAnim: ''
+        }] : [],
+        insuranceCost: 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
+    }
+
     function addBet(amount) {
       if (state.game || isBusyAnimating) return;
       sfx.chip();
       state.currentBet = Math.min(state.points, state.currentBet + amount);
+      pulseBetCircleOnChange(state.currentBet);
       saveStateAndDatabase();
       renderUI();
     }
@@ -818,6 +1008,7 @@
       }
 
       sfx.chip();
+      pulseBetCircleOnChange(state.currentBet);
       saveStateAndDatabase();
       renderUI();
     }
@@ -831,6 +1022,7 @@
       }
       sfx.chip();
       state.currentBet = 1;
+      pulseBetCircleOnChange(state.currentBet);
       saveStateAndDatabase();
       renderUI();
     }
@@ -844,6 +1036,7 @@
       }
       sfx.chip();
       state.currentBet = Math.max(1, Math.floor(state.points / 2));
+      pulseBetCircleOnChange(state.currentBet);
       saveStateAndDatabase();
       renderUI();
     }
@@ -854,6 +1047,7 @@
       state.currentBet = 0;
       const inputEl = document.getElementById('custom-bet-input');
       if (inputEl) inputEl.value = '';
+      pulseBetCircleOnChange(0);
       saveStateAndDatabase();
       renderUI();
     }
@@ -862,8 +1056,81 @@
       if (state.game || isBusyAnimating) return;
       sfx.chip();
       state.currentBet = state.points;
+      pulseBetCircleOnChange(state.currentBet);
       saveStateAndDatabase();
       renderUI();
+    }
+
+    async function animateResolutionChips(handPlans, insPlan) {
+      if (!animationsEnabled) {
+        tableChipOverlay.mode = 'idle';
+        tableChipOverlay.hands = [];
+        tableChipOverlay.insuranceCost = 0;
+        renderBettingCircles();
+        return;
+      }
+
+      isBusyAnimating = true;
+      updateControlsVisibility(false);
+
+      // Step 1: Dealer places winning chips beside your bet stack
+      const anyWin = handPlans.some(p => p.winningsSideAmount > 0);
+      if (anyWin) {
+        tableChipOverlay = {
+          mode: 'resolving',
+          hands: handPlans.map(p => ({
+            bet: p.bet,
+            payout: p.winningsSideAmount,
+            outcome: p.outcome,
+            animateBet: false,
+            animatePayout: p.winningsSideAmount > 0,
+            resolveAnim: ''
+          })),
+          insuranceCost: insPlan.cost,
+          insuranceOutcome: null,
+          animateInsurance: false
+        };
+        sfx.chip();
+        renderBettingCircles();
+        await sleep(360);
+      }
+
+      // Step 2: Sweep chips to player (win/push) or away toward dealer (bust/lose)
+      tableChipOverlay = {
+        mode: 'resolving',
+        hands: handPlans.map(p => ({
+          bet: p.bet,
+          payout: p.winningsSideAmount,
+          outcome: p.outcome,
+          animateBet: false,
+          animatePayout: false,
+          resolveAnim: (p.outcome === 'win' || p.outcome === 'push')
+            ? 'chip-to-player-anim'
+            : 'chip-to-dealer-anim'
+        })),
+        insuranceCost: insPlan.cost,
+        insuranceOutcome: insPlan.outcome,
+        animateInsurance: false
+      };
+      renderBettingCircles();
+      await sleep(420);
+
+      isBusyAnimating = false;
+      tableChipOverlay = {
+        mode: state.currentBet > 0 ? 'prebet' : 'idle',
+        hands: state.currentBet > 0 ? [{
+          bet: state.currentBet,
+          payout: 0,
+          outcome: null,
+          animateBet: false,
+          animatePayout: false,
+          resolveAnim: ''
+        }] : [],
+        insuranceCost: 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
+      renderBettingCircles();
     }
 
     async function startGame() {
@@ -901,11 +1168,27 @@
         revealed: false
       };
 
+      tableChipOverlay = {
+        mode: 'active',
+        hands: [{
+          bet,
+          payout: 0,
+          outcome: null,
+          animateBet: true,
+          animatePayout: false,
+          resolveAnim: ''
+        }],
+        insuranceCost: 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
+      sfx.chip();
+
       if (!animationsEnabled) {
         state.game.hands = [[pCard1, pCard2]];
         state.game.dealer = [dCard1, dCard2];
         sfx.card();
-        finishInitialDeal(bet);
+        await finishInitialDeal(bet);
         return;
       }
 
@@ -934,32 +1217,39 @@
       await sleep(140);
 
       isBusyAnimating = false;
-      finishInitialDeal(bet);
+      await finishInitialDeal(bet);
     }
 
-    function finishInitialDeal(bet) {
+    async function finishInitialDeal(bet) {
       const g = state.game;
       const pScore = calcScore(g.hands[0]);
 
       if (pScore === 21) {
-        const payout = Math.floor(bet * 2.5);
-        state.points += payout;
+        const totalReturn = Math.floor(bet * 2.5);
+        const sideWinnings = Math.max(0, totalReturn - bet);
+        state.points += totalReturn;
 
         if (!state.stats) state.stats = { totalHands: 0, wins: 0, losses: 0, netProfit: 0 };
         state.stats.totalHands += 1;
         state.stats.wins += 1;
         state.stats.netProfit = state.points - 1000;
 
-        const logMsg = `[BJ] Natural Blackjack! Bet ${bet} | Won +${payout} | Balance: ${state.points}`;
+        const logMsg = `[BJ] Natural Blackjack! Bet ${bet} | Won +${totalReturn} | Balance: ${state.points}`;
         if (!state.history) state.history = [];
         state.history.unshift(logMsg);
         if (state.history.length > 20) state.history.pop();
 
         g.revealed = true;
         sfx.win();
-        setBanner(`BLACKJACK! NATURAL 21! YOU WON +${payout} CHIPS!`, "blackjack");
+        setBanner(`BLACKJACK! NATURAL 21! YOU WON +${totalReturn} CHIPS!`, "blackjack");
         saveStateAndDatabase();
         renderUI();
+
+        await animateResolutionChips(
+          [{ bet, winningsSideAmount: sideWinnings, outcome: 'win' }],
+          { cost: 0, outcome: null }
+        );
+
         state.game = null;
         updateControlsVisibility(false);
         return;
@@ -1037,6 +1327,7 @@
       }
 
       hideHotkeyTooltip();
+      sfx.chip();
       state.points -= bet;
 
       const cardA = activeHand[0];
@@ -1048,6 +1339,17 @@
       g.bets = [bet, bet];
       g.isSplit = true;
       g.activeHandIndex = 0;
+
+      tableChipOverlay = {
+        mode: 'active',
+        hands: [
+          { bet, payout: 0, outcome: null, animateBet: true, animatePayout: false, resolveAnim: '' },
+          { bet, payout: 0, outcome: null, animateBet: true, animatePayout: false, resolveAnim: '' }
+        ],
+        insuranceCost: g.hasInsurance ? g.insuranceCost : 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
 
       if (!animationsEnabled) {
         g.hands[0].push(newCardA);
@@ -1063,7 +1365,7 @@
       updateControlsVisibility(false);
       setBanner("SPLITTING HANDS...", "");
       renderUI();
-      await sleep(140);
+      await sleep(160);
 
       g.hands[0].push(newCardA);
       sfx.card();
@@ -1100,6 +1402,21 @@
       sfx.chip();
       state.points -= bet;
       g.bets[idx] *= 2;
+
+      tableChipOverlay = {
+        mode: 'active',
+        hands: g.bets.map((b, i) => ({
+          bet: b,
+          payout: 0,
+          outcome: null,
+          animateBet: i === idx,
+          animatePayout: false,
+          resolveAnim: ''
+        })),
+        insuranceCost: g.hasInsurance ? g.insuranceCost : 0,
+        insuranceOutcome: null,
+        animateInsurance: false
+      };
 
       const drawnCard = g.deck.pop();
       hand.push(drawnCard);
@@ -1150,6 +1467,21 @@
       g.hasInsurance = true;
       g.insuranceCost = cost;
 
+      tableChipOverlay = {
+        mode: 'active',
+        hands: g.bets.map(b => ({
+          bet: b,
+          payout: 0,
+          outcome: null,
+          animateBet: false,
+          animatePayout: false,
+          resolveAnim: ''
+        })),
+        insuranceCost: cost,
+        insuranceOutcome: null,
+        animateInsurance: true
+      };
+
       setBanner(`INSURANCE LOCKED (${cost} CHIPS)! CONTINUE YOUR HAND.`, "");
       saveStateAndDatabase();
       renderUI();
@@ -1198,13 +1530,17 @@
       let handWon = false;
       let handLost = false;
       const results = [];
+      const handPlans = [];
+      const insPlan = { cost: g.hasInsurance ? g.insuranceCost : 0, outcome: null };
 
       if (g.hasInsurance) {
         if (isDealerBlackjack) {
           const insPayout = g.insuranceCost * 3;
           state.points += insPayout;
+          insPlan.outcome = 'won';
           results.push(`INSURANCE WON (+${insPayout})`);
         } else {
+          insPlan.outcome = 'lost';
           results.push(`INSURANCE LOST`);
         }
       }
@@ -1218,19 +1554,23 @@
           results.push(`${prefix}BUST`);
           netProfitChange -= hBet;
           handLost = true;
+          handPlans.push({ bet: hBet, winningsSideAmount: 0, outcome: 'lose' });
         } else if (dScore > 21 || hScore > dScore) {
           const payout = hBet * 2;
           state.points += payout;
           netProfitChange += hBet;
           handWon = true;
           results.push(`${prefix}WIN (+${payout})`);
+          handPlans.push({ bet: hBet, winningsSideAmount: hBet, outcome: 'win' });
         } else if (hScore === dScore) {
           state.points += hBet;
           results.push(`${prefix}PUSH`);
+          handPlans.push({ bet: hBet, winningsSideAmount: 0, outcome: 'push' });
         } else {
           results.push(`${prefix}LOST`);
           netProfitChange -= hBet;
           handLost = true;
+          handPlans.push({ bet: hBet, winningsSideAmount: 0, outcome: 'lose' });
         }
       });
 
@@ -1257,6 +1597,8 @@
 
       saveStateAndDatabase();
       renderUI();
+
+      await animateResolutionChips(handPlans, insPlan);
 
       state.game = null;
       updateControlsVisibility(false);
@@ -1430,6 +1772,8 @@
         `;
         playerContainerEl.appendChild(slot);
         updateControlsVisibility(false);
+        syncTableChipOverlayFromGame();
+        renderBettingCircles();
         return;
       }
 
@@ -1501,6 +1845,9 @@
         document.getElementById('btn-dd').disabled = !canDD;
         document.getElementById('btn-insurance').disabled = !canIns;
       }
+
+      syncTableChipOverlayFromGame();
+      renderBettingCircles();
     }
 
     // ========================================================================
