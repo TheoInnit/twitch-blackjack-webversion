@@ -98,7 +98,7 @@
             <!-- Player hand slots render here -->
           </div>
           <div class="betting-circles-stage" id="betting-circles-stage" aria-label="Casino betting circles">
-            <!-- Overhead 8-bit chip stacks & circular pixel bet rings render here -->
+            <!-- Overhead 8-bit chip stacks & circular bet rings render here -->
           </div>
         </section>
 
@@ -485,7 +485,7 @@
     };
 
     // ========================================================================
-    // OVERHEAD 8-BIT CHIPS, STEPPED PIXEL CIRCLE & HEIGHT SHADOWS
+    // OVERHEAD 8-BIT CHIPS, SEAMLESS BET CIRCLE & HEIGHT SHADOWS
     // ========================================================================
     const CHIP_PALETTE = {
       500: { main: '#d97706', dark: '#78350f', light: '#fbbf24', edge: '#fef3c7' },
@@ -544,7 +544,6 @@
     }
 
     function buildOverheadDiscSVG(chip, ox, oy, opacity = 1) {
-      // Renders a top-down 8-bit circular poker chip with casino edge notches & inner ring
       const pal = chip.pal;
       let rects = '';
 
@@ -617,22 +616,13 @@
       const stackCount = shown.length;
       const topChip = shown[stackCount - 1] || CHIP_DENOMS[CHIP_DENOMS.length - 1];
 
-      // Overhead view box (pixel units rendered at 2x for crisp 8-bit pixels)
-      const pxW = 30;
-      const pxH = 30;
-      const ox = 5;
-      const oy = 5;
+      // Centered top chip inside a 32x32 pixel grid so it sits right in the middle of the bet circle
+      const pxW = 32;
+      const pxH = 32;
+      const ox = 7;
+      const oy = 7;
 
-      // Dynamic shadow scales with stack height (1 chip = tight shadow, stacked = projected further)
       const shadowLayer = buildOverheadShadowMask(stackCount, ox, oy);
-
-      // Subtle overhead offset per stacked chip so lower chips peek slightly behind top chip
-      let lowerChipsLayer = '';
-      for (let i = 0; i < stackCount - 1; i++) {
-        const backOffset = Math.min(3, (stackCount - 1 - i));
-        lowerChipsLayer += buildOverheadDiscSVG(shown[i], ox - backOffset, oy - backOffset, 0.72);
-      }
-
       const topChipLayer = buildOverheadDiscSVG(topChip, ox, oy, 1);
 
       const overflowBadge = overflowCount > 0 ? `<span class="stack-overflow">+${overflowCount}</span>` : '';
@@ -643,7 +633,6 @@
           ${topBadge}
           <svg class="chip-8bit-svg" width="${pxW * 2}" height="${pxH * 2}" viewBox="0 0 ${pxW} ${pxH}" shape-rendering="crispEdges" aria-label="${amount} chips">
             ${shadowLayer}
-            ${lowerChipsLayer}
             ${topChipLayer}
             <text x="${ox + 9}" y="${oy + 10.6}" text-anchor="middle" fill="#ffffff" font-family="'Press Start 2P', monospace" font-size="4.4" stroke="#09090b" stroke-width="1.1" paint-order="stroke">${topChip.label}</text>
           </svg>
@@ -652,61 +641,12 @@
       `;
     }
 
-    function buildPixelBetCircleSVG(labelText, isSplitSpot = false) {
-      // True stepped 8-bit circle on a 32x32 pixel grid
-      const size = 32;
-      const circleRows = [
-        [11, 21],
-        [8, 24],
-        [6, 26],
-        [5, 27],
-        [4, 28],
-        [3, 29],
-        [2, 30],
-        [2, 30],
-        [1, 31],
-        [1, 31],
-        [1, 31],
-        [1, 31],
-        [1, 31],
-        [1, 31],
-        [2, 30],
-        [2, 30],
-        [3, 29],
-        [4, 28],
-        [5, 27],
-        [6, 26],
-        [8, 24],
-        [11, 21]
-      ];
-
-      let ringRects = '';
-      // Subtle dark outer pixel border
-      circleRows.forEach(([xs, xe], idx) => {
-        const y = 5 + idx;
-        ringRects += `<rect x="${xs - 1}" y="${y}" width="1" height="1" fill="rgba(9, 9, 11, 0.35)" />`;
-        ringRects += `<rect x="${xe}" y="${y}" width="1" height="1" fill="rgba(9, 9, 11, 0.35)" />`;
-      });
-
-      // Crisp 8-bit white circular perimeter
-      circleRows.forEach(([xs, xe], idx) => {
-        const y = 5 + idx;
-        const isCapRow = (idx === 0 || idx === circleRows.length - 1);
-        if (isCapRow) {
-          ringRects += `<rect x="${xs}" y="${y}" width="${xe - xs}" height="1" fill="rgba(255, 255, 255, 0.85)" />`;
-        } else {
-          ringRects += `<rect x="${xs}" y="${y}" width="1" height="1" fill="rgba(255, 255, 255, 0.85)" />`;
-          ringRects += `<rect x="${xe - 1}" y="${y}" width="1" height="1" fill="rgba(255, 255, 255, 0.85)" />`;
-        }
-      });
-
-      const renderSize = isSplitSpot ? 64 : 76;
-
+    function buildPerfectBetCircleHTML(labelText, isSplitSpot = false) {
+      const size = isSplitSpot ? 62 : 74;
       return `
-        <svg class="pixel-ring-svg" width="${renderSize}" height="${renderSize}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">
-          ${ringRects}
-          ${labelText ? `<text x="16" y="17.5" text-anchor="middle" fill="rgba(255, 255, 255, 0.82)" font-family="'Press Start 2P', monospace" font-size="4.4">${labelText}</text>` : ''}
-        </svg>
+        <div class="perfect-bet-circle" style="width: ${size}px; height: ${size}px;">
+          ${labelText ? `<span class="perfect-bet-circle-label">${labelText}</span>` : ''}
+        </div>
       `;
     }
 
@@ -755,7 +695,7 @@
         stage.innerHTML = `
           <div class="bet-circle-spot is-empty">
             <div class="bet-circle-ring">
-              ${buildPixelBetCircleSVG('BET', false)}
+              ${buildPerfectBetCircleHTML('BET', false)}
             </div>
           </div>
         `;
@@ -783,8 +723,8 @@
         return `
           <div class="bet-circle-spot ${hasChips ? 'has-chips' : 'is-empty'}">
             <div class="bet-circle-ring ${resolveClass}">
-              ${!hasChips ? buildPixelBetCircleSVG(spotLabel, isSplitView) : `
-                <div class="pixel-ring-on-felt">${buildPixelBetCircleSVG('', isSplitView)}</div>
+              ${!hasChips ? buildPerfectBetCircleHTML(spotLabel, isSplitView) : `
+                <div class="pixel-ring-on-felt">${buildPerfectBetCircleHTML('', isSplitView)}</div>
                 <div class="chip-pair-container">
                   ${betStack}
                   ${winStack}
@@ -805,7 +745,7 @@
         insHtml = `
           <div class="bet-circle-spot ins-spot has-chips">
             <div class="bet-circle-ring ins-ring ${insResolve}">
-              <div class="pixel-ring-on-felt">${buildPixelBetCircleSVG('', true)}</div>
+              <div class="pixel-ring-on-felt">${buildPerfectBetCircleHTML('', true)}</div>
               <div class="chip-pair-container">
                 ${buildChipStackHTML(tableChipOverlay.insuranceCost, { animClass: insAnim, badgeLabel: 'INS' })}
               </div>
