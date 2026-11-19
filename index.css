@@ -1,0 +1,803 @@
+/* ==========================================================================
+   1. PIXEL-ART DESIGN TOKENS & RESET (INDEX)
+   ========================================================================== */
+:root {
+  --bg-dark: #14121d;
+  --wood-outer: #3e2116;
+  --wood-mid: #6b3b24;
+  --wood-light: #965736;
+  --felt-dark: #14532d;
+  --felt-mid: #166534;
+  --felt-light: #1e7e44;
+  --felt-line: #2ea45c;
+  --card-bg: #f8f5ec;
+  --card-shadow: #c7c0ae;
+  --ink-black: #18181b;
+  --ink-red: #dc2626;
+  --twitch-purple: #9146ff;
+  --twitch-dark: #5c16c5;
+  --twitch-light: #b98aff;
+  --gold: #facc15;
+  --gold-dark: #b45309;
+  --pixel-border: #09090b;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  image-rendering: pixelated;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  background-image:
+    radial-gradient(#231f33 2px, transparent 2px),
+    radial-gradient(#1b1829 2px, #14121d 2px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  font-family: 'Press Start 2P', monospace;
+  color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   2. PIXEL BORDERS, BUTTONS & UTILITY CLASSES
+   ========================================================================== */
+.pixel-box {
+  border: 4px solid var(--pixel-border);
+  box-shadow:
+    inset -4px -4px 0px rgba(0, 0, 0, 0.35),
+    inset 4px 4px 0px rgba(255, 255, 255, 0.18),
+    0 6px 0 var(--pixel-border);
+}
+
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  border: 4px solid var(--pixel-border);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  position: relative;
+  transition: transform 0.05s steps(1);
+  box-shadow:
+    inset -4px -4px 0px rgba(0, 0, 0, 0.4),
+    inset 4px 4px 0px rgba(255, 255, 255, 0.25),
+    0 4px 0 var(--pixel-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.pixel-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.pixel-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset -2px -2px 0px rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0px rgba(255, 255, 255, 0.25),
+    0 0px 0 var(--pixel-border);
+}
+
+.pixel-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.65);
+}
+
+/* Button Color Variants */
+.btn-twitch { background: var(--twitch-purple); color: #fff; }
+.btn-gold { background: var(--gold); color: #18181b; }
+.btn-green { background: #22c55e; color: #052e16; }
+.btn-red { background: #ef4444; color: #fff; }
+.btn-blue { background: #3b82f6; color: #fff; }
+.btn-amber { background: #f59e0b; color: #18181b; }
+.btn-cyan { background: #06b6d4; color: #083344; }
+.btn-slate { background: #475569; color: #f8fafc; }
+
+/* ==========================================================================
+   3. TOP HUD HEADER BAR
+   ========================================================================== */
+.hud-header {
+  width: 100%;
+  max-width: 1040px;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #1e1b2e;
+  border-bottom: 4px solid var(--pixel-border);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--gold);
+  text-shadow: 3px 3px 0 #000;
+}
+
+.hud-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.stat-pill {
+  background: #0f0d17;
+  border: 3px solid var(--pixel-border);
+  padding: 8px 12px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.08);
+}
+
+.stat-pill span.val {
+  color: #4ade80;
+}
+
+.user-badge-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.btn-logout-under {
+  font-size: 8px !important;
+  padding: 7px 10px !important;
+  width: 100%;
+  border-width: 3px !important;
+  box-shadow:
+    inset -2px -2px 0px rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0px rgba(255, 255, 255, 0.25),
+    0 3px 0 var(--pixel-border) !important;
+}
+
+.hud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-actions .pixel-btn {
+  font-size: 9px;
+  padding: 10px 8px;
+  min-width: 118px;
+  height: 36px;
+}
+
+/* ==========================================================================
+   4. CASINO FELT TABLE CONTAINER
+   ========================================================================== */
+.table-wrapper {
+  width: 100%;
+  max-width: 1000px;
+  padding: 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.wood-frame {
+  background: var(--wood-mid);
+  border: 6px solid var(--pixel-border);
+  padding: 12px;
+  box-shadow:
+    inset -6px -6px 0 var(--wood-outer),
+    inset 6px 6px 0 var(--wood-light),
+    0 10px 0 #09090b;
+}
+
+.felt-surface {
+  background-color: var(--felt-mid);
+  background-image:
+    linear-gradient(45deg, var(--felt-dark) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--felt-dark) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--felt-dark) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--felt-dark) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  border: 4px solid var(--pixel-border);
+  box-shadow: inset 0 0 0 4px var(--felt-light);
+  padding: 18px 14px;
+  min-height: 460px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  gap: 16px;
+}
+
+.felt-watermark {
+  text-align: center;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1px;
+  line-height: 1.6;
+  border-top: 2px dashed rgba(255, 255, 255, 0.2);
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+  padding: 6px 0;
+  margin: 2px auto;
+  max-width: 540px;
+}
+
+/* ==========================================================================
+   5. HAND ZONES (DEALER & PLAYER)
+   ========================================================================== */
+.zone-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.zone-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.score-badge {
+  background: #09090b;
+  color: var(--gold);
+  border: 3px solid #fff;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.cards-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 126px;
+}
+
+.player-hands-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.hand-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 4px solid transparent;
+  transition: all 0.1s steps(1);
+}
+
+.hand-slot.active-hand {
+  background: rgba(250, 204, 21, 0.14);
+  border: 4px dashed var(--gold);
+}
+
+.bet-tag {
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 4px 8px;
+  border: 2px solid #000;
+  color: #fde047;
+}
+
+/* ==========================================================================
+   6. MINIMALIST PIXEL-ART PLAYING CARDS & SMOOTH DEAL ANIMATION
+   ========================================================================== */
+@keyframes pixelDealSmooth {
+  0% {
+    transform: translate(44px, -42px) scale(0.76) rotate(4deg);
+    opacity: 0;
+  }
+  65% {
+    transform: translate(-2px, 3px) scale(1.03) rotate(-0.5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.pixel-card {
+  width: 84px;
+  height: 118px;
+  background-color: var(--card-bg);
+  border: 4px solid var(--pixel-border);
+  box-shadow:
+    inset -4px -4px 0 var(--card-shadow),
+    inset 4px 4px 0 #ffffff,
+    4px 4px 0 rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  opacity: 1;
+}
+
+.pixel-card.anim-deal {
+  animation: pixelDealSmooth 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pixel-card.red {
+  color: var(--ink-red);
+}
+
+.pixel-card.black {
+  color: var(--ink-black);
+}
+
+.card-value {
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.card-suit-svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+  shape-rendering: crispEdges;
+}
+
+.pixel-card.card-back {
+  background-color: #1d4ed8;
+  background-image:
+    linear-gradient(45deg, #1e3a8a 25%, transparent 25%),
+    linear-gradient(-45deg, #1e3a8a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1e3a8a 75%),
+    linear-gradient(-45deg, transparent 75%, #1e3a8a 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  box-shadow:
+    inset 0 0 0 4px #93c5fd,
+    inset 0 0 0 8px #1e40af,
+    4px 4px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* ==========================================================================
+   7. CENTER DIALOGUE / ANNOUNCEMENT BANNER
+   ========================================================================== */
+.status-banner {
+  background: #09090b;
+  border: 4px solid #ffffff;
+  box-shadow:
+    0 0 0 4px #09090b,
+    0 6px 0 rgba(0, 0, 0, 0.5);
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #f8fafc;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.status-banner.win { border-color: #4ade80; color: #4ade80; }
+.status-banner.lose { border-color: #f87171; color: #f87171; }
+.status-banner.blackjack { border-color: var(--gold); color: var(--gold); }
+
+/* ==========================================================================
+   8. CONTROLS & BETTING DOCK (STABLE HEIGHT TO PREVENT LAYOUT SHIFT)
+   ========================================================================== */
+.controls-dock {
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dock-panel {
+  background: #1e1b2e;
+  padding: 14px;
+  min-height: 214px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.pixel-chip {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  width: 58px;
+  height: 58px;
+  border: 4px solid #09090b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 255, 255, 0.35),
+    0 4px 0 #09090b;
+  transition: transform 0.05s steps(1);
+}
+
+.pixel-chip:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.35);
+}
+
+.pixel-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chip-10 { background: #2563eb; }
+.chip-50 { background: #dc2626; }
+.chip-100 { background: #16a34a; }
+.chip-250 { background: #9333ea; }
+.chip-500 { background: #d97706; }
+
+.action-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.action-buttons-row .pixel-btn {
+  font-size: 11px;
+  padding: 14px 16px;
+  min-width: 120px;
+}
+
+/* ==========================================================================
+   9. CHANNEL PROMO BANNER
+   ========================================================================== */
+.channel-promo {
+  background: #1e1b2e;
+  border: 4px solid var(--pixel-border);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+  max-width: 1000px;
+  width: calc(100% - 28px);
+  margin: 0 auto 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--twitch-light);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.channel-promo code {
+  background: #0f0d17;
+  border: 2px solid var(--twitch-purple);
+  color: var(--gold);
+  padding: 4px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  display: inline-block;
+}
+
+.channel-subtext {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ==========================================================================
+   10. FOOTER, MODALS, SLIDER TOGGLES & PIXEL HOTKEY TOOLTIP
+   ========================================================================== */
+.page-footer {
+  padding: 10px 0 20px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
+.page-footer a {
+  color: var(--twitch-light);
+  text-decoration: none;
+}
+
+.page-footer a:hover {
+  text-decoration: underline;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.84);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal-backdrop.sub-modal {
+  z-index: 130;
+  background: rgba(9, 9, 11, 0.72);
+}
+
+.modal-card {
+  background: #1e1b2e;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-title {
+  font-size: 13px;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 4px solid #09090b;
+  padding-bottom: 10px;
+}
+
+.option-row {
+  background: #0f0d17;
+  border: 3px solid var(--pixel-border);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 9px;
+}
+
+.option-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.option-desc {
+  font-size: 7px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.option-control-slot {
+  width: 96px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.option-action-btn {
+  width: 96px !important;
+  font-size: 8px !important;
+  padding: 8px 8px !important;
+  border-width: 3px !important;
+  box-shadow:
+    inset -3px -3px 0px rgba(0, 0, 0, 0.4),
+    inset 3px 3px 0px rgba(255, 255, 255, 0.25),
+    0 3px 0 var(--pixel-border) !important;
+}
+
+/* Pixel Slider Toggle (Turns Green When ON) */
+.pixel-slider-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  width: 84px;
+  height: 30px;
+  padding: 3px;
+  border: 3px solid var(--pixel-border);
+  background: #334155;
+  color: #f8fafc;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.35),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.15),
+    0 3px 0 var(--pixel-border);
+}
+
+.pixel-slider-btn.is-on {
+  background: #16a34a;
+  color: #052e16;
+}
+
+.pixel-slider-label {
+  width: 100%;
+  text-align: center;
+  padding-right: 20px;
+  pointer-events: none;
+}
+
+.pixel-slider-btn.is-on .pixel-slider-label {
+  padding-right: 0;
+  padding-left: 20px;
+}
+
+.pixel-slider-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 20px;
+  background: #f8fafc;
+  border: 2px solid var(--pixel-border);
+  transition: left 0.08s steps(2);
+  pointer-events: none;
+}
+
+.pixel-slider-btn.is-on .pixel-slider-thumb {
+  left: 58px;
+  background: #fef08a;
+}
+
+.hotkey-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hotkey-row {
+  background: #0f0d17;
+  border: 3px solid var(--pixel-border);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 9px;
+}
+
+.hotkey-bind-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  min-width: 96px;
+  padding: 8px 10px;
+  background: #1e1b2e;
+  color: var(--gold);
+  border: 3px solid #475569;
+  cursor: pointer;
+  text-align: center;
+}
+
+.hotkey-bind-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+}
+
+.hotkey-bind-btn.listening {
+  background: var(--gold);
+  color: #18181b;
+  border-color: #ffffff;
+}
+
+.custom-bet-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bet-input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  width: 110px;
+  padding: 8px 10px;
+  background: #09090b;
+  color: var(--gold);
+  border: 4px solid #475569;
+  outline: none;
+  text-align: center;
+}
+
+.bet-input:focus {
+  border-color: var(--gold);
+}
+
+.bet-input::-webkit-outer-spin-button,
+.bet-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hotkey-tooltip {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  display: none;
+  background: #0f0d17;
+  color: #f8fafc;
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 0 0 3px var(--pixel-border),
+    4px 4px 0 rgba(0, 0, 0, 0.75);
+  padding: 8px 10px;
+  font-size: 9px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.hotkey-tooltip.visible {
+  display: block;
+}
+
+.hotkey-key {
+  color: var(--gold);
+  background: #1e1b2e;
+  border: 2px solid #475569;
+  padding: 2px 5px;
+  margin-left: 4px;
+}
+
+@media (max-width: 640px) {
+  .dock-panel {
+    min-height: 238px;
+  }
+  .pixel-card {
+    width: 68px;
+    height: 98px;
+    gap: 6px;
+  }
+  .card-value {
+    font-size: 18px;
+  }
+  .card-suit-svg {
+    width: 26px;
+    height: 26px;
+  }
+  .action-buttons-row .pixel-btn {
+    min-width: 105px;
+    padding: 12px 10px;
+    font-size: 10px;
+  }
+  .brand-title {
+    font-size: 12px;
+  }
+}
