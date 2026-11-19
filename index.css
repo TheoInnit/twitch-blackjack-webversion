@@ -471,12 +471,46 @@ body {
   width: 100%;
   background: #1e1b2e;
   padding: 10px 14px;
-  min-height: 172px;
+  min-height: 176px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
+}
+
+.bet-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bet-input-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 2x2 Keypad Grid: MAX | 1/2 on top, MIN | CLEAR below, uniform width = CLEAR */
+.quick-bet-keypad {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 6px;
+}
+
+.quick-bet-keypad .pixel-btn {
+  width: 100%;
+  min-width: 74px;
+  font-size: 8px;
+  padding: 6px 10px;
+  border-width: 3px;
+  box-shadow:
+    inset -2px -2px 0px rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0px rgba(255, 255, 255, 0.25),
+    0 3px 0 var(--pixel-border);
 }
 
 .chip-row {
@@ -521,11 +555,11 @@ body {
 .chip-250 { background: #9333ea; }
 .chip-500 { background: #d97706; }
 
-/* Full span across the 5-chip row (5 * 48px + 4 * 8px = 272px, with comfortable wide span) */
-.btn-deal-wide {
+/* Exact width of the 5-chip row above it: (5 * 48px) + (4 * 8px) = 272px */
+.btn-deal-aligned {
   font-size: 12px !important;
-  padding: 11px 20px !important;
-  width: 316px;
+  padding: 11px 16px !important;
+  width: 272px;
   max-width: 100%;
 }
 
